@@ -3,7 +3,6 @@ import type { Scene } from "@/lib/types";
 
 // ชื่อ channel มีรหัสลับต่องาน (CHANNEL_KEY ฝั่ง server) กันคนนอกเดาชื่อแล้วยิงเข้า channel
 export const matchChannelName = (key: string, matchId: string) => `praksa-${key}-match-${matchId}`;
-export const displayChannelName = (key: string, gameCode: string) => `praksa-${key}-display-${gameCode}`;
 
 export const EVENTS = {
   sceneChange: "scene_change",

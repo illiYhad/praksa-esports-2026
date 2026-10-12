@@ -1,24 +1,19 @@
 import { data } from "@/lib/data";
-import { nameOf, statusLabel } from "@/lib/view";
+import { ResultClient } from "@/components/studio/ResultClient";
+
+export const dynamic = "force-dynamic";
 
 export default async function ResultPage() {
-  const [matches, participants, games] = await Promise.all([
-    data.getMatches(),
-    data.getParticipants(),
+  const [games, categories, matches, teams] = await Promise.all([
     data.getGames(),
+    data.getCategories(),
+    data.getMatches(),
+    data.getTeams(),
   ]);
   return (
     <div>
-      <h1 className="mb-4 text-xl font-bold">กรอกผล</h1>
-      <p className="mb-3 text-sm text-muted">โครงเท่านั้น — ฟอร์มกรอกผลและปุ่มรับรองจะเพิ่มภายหลัง</p>
-      <ul className="space-y-2">
-        {matches.map((m) => (
-          <li key={m.id} className="rounded bg-surface p-2 text-sm">
-            [{games.find((g) => g.id === m.game_id)?.code}] {m.round_label}: {nameOf(participants, m.a_id)} {m.a_series}-
-            {m.b_series} {nameOf(participants, m.b_id)} · {statusLabel[m.status]}
-          </li>
-        ))}
-      </ul>
+      <h1 className="mb-3 text-xl font-bold">กรอกผล</h1>
+      <ResultClient games={games} categories={categories} matches={matches} teams={teams} />
     </div>
   );
 }

@@ -21,9 +21,10 @@ export default async function OverlayPage({
 
   const g = (await data.getGames()).find((x) => x.code === game);
   if (!g) notFound();
-  const [matches, participants, sponsors] = await Promise.all([
+  const [matches, teams, players, sponsors] = await Promise.all([
     data.getMatches(g.id),
-    data.getParticipants(g.id),
+    data.getTeams(g.id),
+    data.getPlayers(g.id),
     data.getSponsors(),
   ]);
   const match = matches.find((x) => x.id === matchId);
@@ -37,7 +38,8 @@ export default async function OverlayPage({
         game={g}
         match={match}
         matches={matches}
-        participants={participants}
+        teams={teams}
+        players={players}
         sponsors={sponsors}
         showRoster={q.roster !== "0"}
         stingerVideo={q.stinger}

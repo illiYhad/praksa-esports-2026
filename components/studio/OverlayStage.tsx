@@ -1,7 +1,8 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { Game, Match, Participant, Scene, Sponsor, SponsorSlot } from "@/lib/types";
+import type { Game, Match, Player, Scene, Sponsor, SponsorPosition, Team } from "@/lib/types";
+import { sponsorsAt } from "@/lib/view";
 import { EVENTS, matchChannelName, openBus, type HubEventMap, type HudTone } from "@/lib/realtime";
 import { SponsorLogo } from "./SponsorLogo";
 import { Stinger } from "./Stinger";
@@ -10,30 +11,31 @@ export const EVENT_TITLE = "Praksa Esports 2026";
 const BAR_ROTATE_MS = 8000;
 const TONE: Record<HudTone, string> = { info: "bg-accent text-black", warn: "bg-amber-400 text-black", alert: "bg-live text-white" };
 
-const withSlot = (sponsors: Sponsor[], slot: SponsorSlot) => sponsors.filter((s) => s.slots.includes(slot));
+const withSlot = (sponsors: Sponsor[], slot: SponsorPosition) => sponsorsAt(sponsors, slot);
 
 type Props = {
   channelKey: string;
   game: Game;
   match: Match;
   matches: Match[];
-  participants: Participant[];
+  teams: Team[];
+  players: Player[];
   sponsors: Sponsor[];
   showRoster: boolean;
   stingerVideo?: string;
 };
 
-export function OverlayStage({ channelKey, game, match, matches, participants, sponsors, showRoster, stingerVideo }: Props) {
-  const [scene, setScene] = useState<Scene>(match.status === "live" ? "LIVE" : "STARTING");
-  const [score, setScore] = useState({ a_series: match.a_series, b_series: match.b_series, games: match.games });
+export function OverlayStage({ channelKey, game, match, matches, teams, players, sponsors, showRoster, stingerVideo }: Props) {
+  const [scene, setScene] = useState<Scene>(match.status === "ongoing" ? "LIVE" : "STARTING");
+  const [score, setScore] = useState({ a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores });
   const [hud, setHud] = useState<{ text: string; tone: HudTone } | null>(null);
   const [stingerId, setStingerId] = useState(0);
   const pending = useRef<Scene | undefined>(undefined);
   const [barIdx, setBarIdx] = useState(0);
 
-  const a = participants.find((p) => p.id === match.a_id);
-  const b = participants.find((p) => p.id === match.b_id);
-  const bars = withSlot(sponsors, "bar");
+  const a = teams.find((p) => p.id === match.team_a_id);
+  const b = teams.find((p) => p.id === match.team_b_id);
+  const bars = withSlot(sponsors, "bottom_ticker");
   const corner = withSlot(sponsors, "corner")[0];
   const stingerSponsor = withSlot(sponsors, "stinger")[0];
 
@@ -85,16 +87,17 @@ export function OverlayStage({ channelKey, game, match, matches, participants, s
   const winner = score.a_series > score.b_series ? aName : score.b_series > score.a_series ? bName : null;
   const barSponsor = bars.length ? bars[barIdx % bars.length] : undefined;
 
-  const roster = (p?: Participant) =>
-    game.format === "team" && showRoster && p?.members ? (
+  const memberNames = (p?: Team) => (p ? players.filter((x) => x.team_id === p.id).map((x) => x.in_game_name) : []);
+  const roster = (p?: Team) =>
+    game.format === "team" && showRoster && p ? (
       <ul className="mt-2 space-y-0.5 text-xl text-muted">
-        {p.members.map((m) => (
+        {memberNames(p).map((m) => (
           <li key={m}>{m}</li>
         ))}
       </ul>
     ) : null;
 
-  const rounds = [...new Set(matches.map((m) => m.round_label))];
+  const rounds = [...new Set(matches.map((m) => m.round_name))];
 
   return (
     <div className="relative h-[1080px] w-[1920px] overflow-hidden text-text" style={{ background: "transparent" }}>
@@ -105,7 +108,7 @@ export function OverlayStage({ channelKey, game, match, matches, participants, s
           <div className="text-5xl font-bold">
             {aName} <span className="text-accent-2">vs</span> {bName}
           </div>
-          <div className="text-3xl text-muted">{match.round_label} · {game.name}</div>
+          <div className="text-3xl text-muted">{match.round_name} · {game.name}</div>
         </div>
       )}
 
@@ -121,7 +124,7 @@ export function OverlayStage({ channelKey, game, match, matches, participants, s
                 {score.a_series} - {score.b_series}
               </div>
               <div className="text-xl text-muted">
-                {match.round_label} · BO{match.best_of}
+                {match.round_name} · BO{match.best_of}
                 {game.code === "rov" ? ` · เกมที่ ${gameNo}` : ""}
               </div>
               {game.code === "efootball" && (
@@ -147,7 +150,7 @@ export function OverlayStage({ channelKey, game, match, matches, participants, s
 
       {scene === "RESULT" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-6 bg-bg/90">
-          <div className="text-4xl text-accent">{match.round_label}</div>
+          <div className="text-4xl text-accent">{match.round_name}</div>
           <div className="text-8xl font-black">{winner ? `${winner} ชนะ` : "ผลการแข่งขัน"}</div>
           <div className="text-6xl font-bold text-accent-2">
             {aName} {score.a_series} - {score.b_series} {bName}
@@ -168,16 +171,16 @@ export function OverlayStage({ channelKey, game, match, matches, participants, s
             <div key={r} className="space-y-4">
               <div className="text-2xl text-accent">{r}</div>
               {matches
-                .filter((m) => m.round_label === r)
+                .filter((m) => m.round_name === r)
                 .map((m) => {
                   const here = m.id === match.id;
-                  const sa = here ? score.a_series : m.a_series;
-                  const sb = here ? score.b_series : m.b_series;
-                  const nm = (id?: string) => participants.find((p) => p.id === id)?.name ?? "รอผล";
+                  const sa = here ? score.a_series : m.team_a_score;
+                  const sb = here ? score.b_series : m.team_b_score;
+                  const nm = (id?: string) => teams.find((p) => p.id === id)?.name ?? "รอผล";
                   return (
                     <div key={m.id} className={`w-80 rounded-lg bg-surface p-3 text-2xl ${here ? "ring-2 ring-accent" : ""}`}>
-                      <div className="flex justify-between"><span>{nm(m.a_id)}</span><b>{sa}</b></div>
-                      <div className="flex justify-between"><span>{nm(m.b_id)}</span><b>{sb}</b></div>
+                      <div className="flex justify-between"><span>{nm(m.team_a_id)}</span><b>{sa}</b></div>
+                      <div className="flex justify-between"><span>{nm(m.team_b_id)}</span><b>{sb}</b></div>
                     </div>
                   );
                 })}
@@ -189,9 +192,9 @@ export function OverlayStage({ channelKey, game, match, matches, participants, s
       {scene === "SPONSOR" && (
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-10 bg-bg/95">
           <div className="text-4xl text-muted">ขอบคุณผู้สนับสนุน</div>
-          {withSlot(sponsors, "fullscreen").map((s) => (
-            <div key={s.id} className={s.tier === "main" ? "text-7xl" : s.tier === "co" ? "text-5xl" : "text-3xl"}>
-              <SponsorLogo sponsor={s} className={s.tier === "main" ? "h-40" : "h-24"} />
+          {withSlot(sponsors, "full_screen").map((s) => (
+            <div key={s.id} className={s.level === "main" ? "text-7xl" : s.level === "co" ? "text-5xl" : "text-3xl"}>
+              <SponsorLogo sponsor={s} className={s.level === "main" ? "h-40" : "h-24"} />
             </div>
           ))}
         </div>

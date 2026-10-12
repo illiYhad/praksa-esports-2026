@@ -2,7 +2,7 @@
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, Zap } from "lucide-react";
-import type { Game, Match, Participant, Scene } from "@/lib/types";
+import type { Category, Game, Match, Scene, Team } from "@/lib/types";
 import { EVENTS, matchChannelName, openBus, type Bus, type HudTone } from "@/lib/realtime";
 import { DEFAULT_HOTKEYS, HOTKEY_ACTIONS, SCENE_ACTIONS, comboFromEvent, useStreamHubHotkeys } from "./hotkeys";
 import { HotkeySettingsModal } from "./HotkeySettingsModal";
@@ -19,21 +19,24 @@ export function StreamHubClient({
   channelKey,
   games,
   matches,
-  participants,
+  categories,
+  teams,
 }: {
   channelKey: string;
   games: Game[];
   matches: Match[];
-  participants: Participant[];
+  categories: Category[];
+  teams: Team[];
 }) {
   const [gameId, setGameId] = useState(games[0]?.id ?? "");
-  const gameMatches = matches.filter((m) => m.game_id === gameId);
+  const gid = (m: Match) => categories.find((c) => c.id === m.category_id)?.game_id;
+  const gameMatches = matches.filter((m) => gid(m) === gameId);
   const [matchId, setMatchId] = useState(gameMatches[0]?.id ?? "");
   const game = games.find((g) => g.id === gameId);
   const match = matches.find((m) => m.id === matchId);
-  const nm = (id?: string) => participants.find((p) => p.id === id)?.name ?? "รอผล";
+  const nm = (id?: string) => teams.find((p) => p.id === id)?.name ?? "รอผล";
 
-  const [scene, setScene] = useState<Scene>(match?.status === "live" ? "LIVE" : "STARTING");
+  const [scene, setScene] = useState<Scene>(match?.status === "ongoing" ? "LIVE" : "STARTING");
   const [withStinger, setWithStinger] = useState(true);
   const [score, setScore] = useState({ a_series: 0, b_series: 0, games: [] as { a: number; b: number }[] });
   const [hudText, setHudText] = useState("");
@@ -44,8 +47,8 @@ export function StreamHubClient({
   // เปลี่ยนแมตช์ → เปิด channel ใหม่ + โหลดสกอร์ตั้งต้นจากข้อมูล
   useEffect(() => {
     if (!match) return;
-    setScore({ a_series: match.a_series, b_series: match.b_series, games: match.games });
-    setScene(match.status === "live" ? "LIVE" : "STARTING");
+    setScore({ a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores });
+    setScene(match.status === "ongoing" ? "LIVE" : "STARTING");
     const bus = openBus(matchChannelName(channelKey, match.id));
     busRef.current = bus;
     return () => {
@@ -80,7 +83,7 @@ export function StreamHubClient({
     busRef.current?.send(EVENTS.scoreUpdate, next);
   };
   const bumpSeries = (side: "a" | "b", d: number) =>
-    pushScore({ ...score, [`${side}_series`]: Math.max(0, score[`${side}_series`] + d) });
+    pushScore({ ...score, [`${side}_series`]: Math.min(Math.ceil((match?.best_of ?? 1) / 2), Math.max(0, score[`${side}_series`] + d)) });
   const bumpGame = (side: "a" | "b", d: number) => {
     const games = score.games.length ? [...score.games] : [{ a: 0, b: 0 }];
     const last = games.length - 1;
@@ -139,7 +142,7 @@ export function StreamHubClient({
           value={gameId}
           onChange={(e) => {
             setGameId(e.target.value);
-            setMatchId(matches.find((m) => m.game_id === e.target.value)?.id ?? "");
+            setMatchId(matches.find((m) => gid(m) === e.target.value)?.id ?? "");
           }}
         >
           {games.map((g) => (
@@ -153,9 +156,9 @@ export function StreamHubClient({
                 onClick={() => setMatchId(m.id)}
                 className={`w-full rounded p-2 text-left text-xs ${m.id === matchId ? "bg-accent text-black" : "bg-surface"}`}
               >
-                {m.round_label}
+                {m.round_name}
                 <br />
-                {nm(m.a_id)} vs {nm(m.b_id)}
+                {nm(m.team_a_id)} vs {nm(m.team_b_id)}
               </button>
             </li>
           ))}
@@ -174,7 +177,7 @@ export function StreamHubClient({
           )}
         </div>
         <p className="mt-2 text-xs text-muted">
-          พรีวิว = หน้า overlay จริง · ฉากปัจจุบัน: <b className="text-accent">{scene}</b> · {match ? `${nm(match.a_id)} vs ${nm(match.b_id)}` : "-"}
+          พรีวิว = หน้า overlay จริง · ฉากปัจจุบัน: <b className="text-accent">{scene}</b> · {match ? `${nm(match.team_a_id)} vs ${nm(match.team_b_id)}` : "-"}
         </p>
       </section>
 
@@ -208,11 +211,11 @@ export function StreamHubClient({
 
         <div className="space-y-1 rounded bg-surface/60 p-2">
           <div className="text-xs text-accent-2">สกอร์ซีรีส์ (BO{match?.best_of})</div>
-          {sideRow(nm(match?.a_id), () => bumpSeries("a", -1), () => bumpSeries("a", 1))}
-          {sideRow(nm(match?.b_id), () => bumpSeries("b", -1), () => bumpSeries("b", 1))}
+          {sideRow(nm(match?.team_a_id), () => bumpSeries("a", -1), () => bumpSeries("a", 1))}
+          {sideRow(nm(match?.team_b_id), () => bumpSeries("b", -1), () => bumpSeries("b", 1))}
           <div className="pt-1 text-xs text-accent-2">{game?.code === "efootball" ? "ประตูเกมปัจจุบัน" : "สกอร์รายเกม"}</div>
-          {sideRow(nm(match?.a_id), () => bumpGame("a", -1), () => bumpGame("a", 1))}
-          {sideRow(nm(match?.b_id), () => bumpGame("b", -1), () => bumpGame("b", 1))}
+          {sideRow(nm(match?.team_a_id), () => bumpGame("a", -1), () => bumpGame("a", 1))}
+          {sideRow(nm(match?.team_b_id), () => bumpGame("b", -1), () => bumpGame("b", 1))}
           <button className={`${btn} w-full`} onClick={newGame}>เกมใหม่</button>
           <div className="text-xs text-muted">
             ซีรีส์ {score.a_series}-{score.b_series} · เกม {score.games.map((g) => `${g.a}-${g.b}`).join(", ") || "-"}

@@ -1,55 +1,80 @@
-// ชนิดข้อมูลชั่วคราว — จะเปลี่ยนตาม Schema ของพี่ศิลาภายหลัง
+// ชนิดข้อมูลตาม SCHEMA_v1 ของพี่ศิลา (+ คอลัมน์ที่อลิสขอเพิ่มใน QA บล็อก 9 — รอพี่ศิลายืนยัน)
 export type Game = {
   id: string;
-  code: string;
   name: string;
+  code: string;
   format: "team" | "solo";
   team_size: number;
 };
 
-export type Participant = {
+export type Category = { id: string; game_id: string; name: string };
+
+export type Station = { id: string; game_id: string; name: string };
+
+// เกมเดี่ยว = ทีม 1 คน
+export type Team = {
   id: string;
-  game_id: string;
+  category_id: string;
   name: string;
   short_name?: string;
   logo_url?: string;
-  members?: string[];
-  checked_in: boolean;
+  is_checked_in: boolean;
 };
 
-export type Station = {
+export type Player = {
   id: string;
-  game_id: string;
-  label: string;
+  team_id: string;
+  real_name?: string;
+  in_game_name: string;
+  is_captain: boolean;
 };
 
-export type MatchStatus = "scheduled" | "live" | "finished" | "confirmed";
+export type MatchStatus = "scheduled" | "ongoing" | "ended" | "certified";
+
+export type GameScore = { a: number; b: number };
 
 export type Match = {
   id: string;
-  game_id: string;
-  round_label: string;
-  best_of: number;
+  category_id: string;
   station_id?: string;
-  scheduled_at?: string;
+  round_name: string;
+  best_of: number;
   status: MatchStatus;
-  a_id?: string;
-  b_id?: string;
-  a_series: number;
-  b_series: number;
-  games: { a: number; b: number }[];
+  scheduled_time?: string;
+  team_a_id?: string;
+  team_b_id?: string;
+  team_a_score: number;
+  team_b_score: number;
+  winner_id?: string;
   next_match_id?: string;
-  next_slot?: "a" | "b";
+  next_match_slot?: "a" | "b";
+  loser_next_match_id?: string;
+  loser_next_match_slot?: "a" | "b";
+  game_scores: GameScore[];
+  reported_by?: string;
+  certified_by?: string;
+  updated_at: string;
 };
 
-export type SponsorSlot = "bar" | "corner" | "stinger" | "fullscreen";
+export type MatchAuditLog = {
+  id: string;
+  match_id: string;
+  staff_id?: string;
+  action_details: string;
+  created_at: string;
+};
+
+export type SponsorLevel = "main" | "co" | "support";
+export type SponsorPosition = "bottom_ticker" | "corner" | "stinger" | "full_screen";
 
 export type Sponsor = {
   id: string;
   name: string;
+  level: SponsorLevel;
+  position: SponsorPosition;
+  sequence: number;
   logo_url: string;
-  tier: "main" | "co" | "support";
-  slots: SponsorSlot[];
+  is_active: boolean;
 };
 
 export type StaffRole = "admin" | "result_staff" | "stream_operator";

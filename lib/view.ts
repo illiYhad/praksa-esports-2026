@@ -1,7 +1,6 @@
-import type { Match, Participant } from "@/lib/types";
+import type { Match, Sponsor, SponsorPosition, Team } from "@/lib/types";
 
-export const nameOf = (list: Participant[], id?: string) =>
-  list.find((p) => p.id === id)?.name ?? "รอผลคู่ก่อนหน้า";
+export const nameOf = (list: Team[], id?: string) => list.find((t) => t.id === id)?.name ?? "รอผลคู่ก่อนหน้า";
 
 export const timeOf = (iso?: string) =>
   iso
@@ -10,7 +9,11 @@ export const timeOf = (iso?: string) =>
 
 export const statusLabel: Record<Match["status"], string> = {
   scheduled: "รอแข่ง",
-  live: "กำลังแข่ง",
-  finished: "จบ รอรับรอง",
-  confirmed: "รับรองแล้ว",
+  ongoing: "กำลังแข่ง",
+  ended: "จบ รอรับรอง",
+  certified: "รับรองแล้ว",
 };
+
+/** สปอนเซอร์ที่เปิดใช้ในตำแหน่งนั้น เรียงตาม sequence */
+export const sponsorsAt = (sponsors: Sponsor[], position: SponsorPosition) =>
+  sponsors.filter((s) => s.is_active && s.position === position).sort((a, b) => a.sequence - b.sequence);

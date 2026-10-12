@@ -1,20 +1,19 @@
 import { data } from "@/lib/data";
+import { CheckinClient } from "@/components/studio/CheckinClient";
+
+export const dynamic = "force-dynamic";
 
 export default async function CheckinPage() {
-  const [games, participants] = await Promise.all([data.getGames(), data.getParticipants()]);
+  const [games, categories, teams, players] = await Promise.all([
+    data.getGames(),
+    data.getCategories(),
+    data.getTeams(),
+    data.getPlayers(),
+  ]);
   return (
-    <div className="space-y-4">
+    <div className="space-y-3">
       <h1 className="text-xl font-bold">เช็กอิน</h1>
-      {games.map((g) => (
-        <section key={g.id}>
-          <h2 className="font-bold text-accent-2">{g.name}</h2>
-          <ul className="text-sm">
-            {participants.filter((p) => p.game_id === g.id).map((p) => (
-              <li key={p.id}>{p.checked_in ? "✅" : "⬜"} {p.name}</li>
-            ))}
-          </ul>
-        </section>
-      ))}
+      <CheckinClient games={games} categories={categories} teams={teams} players={players} />
     </div>
   );
 }

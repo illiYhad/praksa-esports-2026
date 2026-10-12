@@ -1,35 +1,73 @@
 import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
-import { nameOf } from "@/lib/view";
+import { LiveRefresh } from "@/components/studio/LiveRefresh";
+import { SponsorTicker } from "@/components/studio/SponsorTicker";
+import { nameOf, sponsorsAt } from "@/lib/view";
 
+export const dynamic = "force-dynamic";
+
+// หน้าสาธารณะบนจอกลาง: อ่านเฉพาะข้อมูลแมตช์จาก DataSource · ไม่รับ CHANNEL_KEY และไม่ฟังช่องคำสั่งควบคุม
 export default async function DisplayPage({ params }: { params: Promise<{ game: string }> }) {
   const { game } = await params;
   const g = (await data.getGames()).find((x) => x.code === game);
   if (!g) notFound();
-  const [stations, matches, participants] = await Promise.all([
+  const [stations, matches, teams, sponsors] = await Promise.all([
     data.getStations(g.id),
     data.getMatches(g.id),
-    data.getParticipants(g.id),
+    data.getTeams(g.id),
+    data.getSponsors(),
   ]);
-  const vs = (m?: (typeof matches)[number]) =>
-    m ? `${nameOf(participants, m.a_id)} vs ${nameOf(participants, m.b_id)}` : "-";
+  const vs = (m?: (typeof matches)[number]) => (m ? `${nameOf(teams, m.team_a_id)} vs ${nameOf(teams, m.team_b_id)}` : "-");
+  const latest = matches
+    .filter((m) => m.status === "certified")
+    .sort((a, b) => b.updated_at.localeCompare(a.updated_at))
+    .slice(0, 5);
+  const cols = stations.length > 4 ? "grid-cols-4" : stations.length > 1 ? "grid-cols-2" : "grid-cols-1";
   return (
-    <div>
-      <h1 className="mb-4 text-xl font-bold">บอร์ดสถานี {g.name}</h1>
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
-        {stations.map((s) => {
-          const mine = matches.filter((m) => m.station_id === s.id);
-          const now = mine.find((m) => m.status === "live");
-          const next = mine.find((m) => m.status === "scheduled");
-          return (
-            <div key={s.id} className="rounded bg-surface p-3 text-sm">
-              <div className="mb-1 font-bold text-accent">{s.label}</div>
-              <div className={now ? "text-live" : "text-muted"}>{now ? `${vs(now)} (${now.a_series}-${now.b_series})` : "ว่าง"}</div>
-              <div className="mt-1 text-xs text-muted">ถัดไป: {vs(next)}</div>
-            </div>
-          );
-        })}
+    <>
+      <style>{"header{display:none}main{max-width:none;padding:0}"}</style>
+      <LiveRefresh />
+      <div className="flex min-h-screen flex-col gap-4 p-8" style={{ minHeight: 1080, width: "100%" }}>
+        <h1 className="text-4xl font-black">
+          <span className="text-accent">{g.name}</span> · บอร์ดสถานี
+        </h1>
+        <div className={`grid flex-1 gap-4 ${cols}`}>
+          {stations.map((s) => {
+            const mine = matches.filter((m) => m.station_id === s.id);
+            const now = mine.find((m) => m.status === "ongoing");
+            const next = mine
+              .filter((m) => m.status === "scheduled")
+              .sort((a, b) => (a.scheduled_time ?? "").localeCompare(b.scheduled_time ?? ""))[0];
+            return (
+              <div key={s.id} className="flex flex-col justify-between rounded-xl bg-surface p-5">
+                <div className="text-2xl font-bold text-accent">{s.name}</div>
+                {now ? (
+                  <div>
+                    <div className="text-sm text-live">● กำลังแข่ง · {now.round_name}</div>
+                    <div className="text-2xl font-bold">{vs(now)}</div>
+                    <div className="text-5xl font-black text-accent-2">{now.team_a_score} - {now.team_b_score}</div>
+                  </div>
+                ) : (
+                  <div className="text-2xl text-muted">ว่าง</div>
+                )}
+                <div className="text-lg text-muted">ถัดไป: {vs(next)}</div>
+              </div>
+            );
+          })}
+        </div>
+        <div className="flex items-center justify-between gap-6 rounded-xl bg-surface/70 px-6 py-3">
+          <div className="text-lg">
+            <span className="mr-3 text-muted">ผลล่าสุด</span>
+            {latest.length === 0 && <span className="text-muted">-</span>}
+            {latest.map((m) => (
+              <span key={m.id} className="mr-6">
+                {nameOf(teams, m.team_a_id)} <b className="text-accent">{m.team_a_score}-{m.team_b_score}</b> {nameOf(teams, m.team_b_id)}
+              </span>
+            ))}
+          </div>
+          <SponsorTicker sponsors={sponsorsAt(sponsors, "bottom_ticker")} />
+        </div>
       </div>
-    </div>
+    </>
   );
 }
