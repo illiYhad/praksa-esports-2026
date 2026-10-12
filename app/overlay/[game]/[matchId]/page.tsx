@@ -1,22 +1,47 @@
 import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
-import { nameOf } from "@/lib/view";
+import { OverlayStage } from "@/components/studio/OverlayStage";
 
-export default async function OverlayPage({ params }: { params: Promise<{ game: string; matchId: string }> }) {
-  const { game, matchId } = await params;
+export const dynamic = "force-dynamic";
+
+const CLEAR_STYLE = "html,body{background:transparent!important;overflow:hidden}header{display:none}main{padding:0;max-width:none;margin:0}";
+
+export default async function OverlayPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ game: string; matchId: string }>;
+  searchParams: Promise<{ k?: string; roster?: string; stinger?: string }>;
+}) {
+  const [{ game, matchId }, q] = await Promise.all([params, searchParams]);
+  const expected = process.env.CHANNEL_KEY;
+
+  // ไม่มีรหัส หรือรหัสไม่ตรง → พื้นโปร่งใสเปล่า ไม่ subscribe
+  if (!expected || q.k !== expected) return <style>{CLEAR_STYLE}</style>;
+
   const g = (await data.getGames()).find((x) => x.code === game);
   if (!g) notFound();
-  const [matches, participants] = await Promise.all([data.getMatches(g.id), data.getParticipants(g.id)]);
-  const m = matches.find((x) => x.id === matchId);
-  if (!m) notFound();
+  const [matches, participants, sponsors] = await Promise.all([
+    data.getMatches(g.id),
+    data.getParticipants(g.id),
+    data.getSponsors(),
+  ]);
+  const match = matches.find((x) => x.id === matchId);
+  if (!match) notFound();
+
   return (
     <>
-      <style>{"html,body{background:transparent!important}header{display:none}main{padding:0;max-width:none}"}</style>
-      <div className="fixed bottom-8 left-1/2 flex -translate-x-1/2 items-center gap-6 rounded bg-black/70 px-6 py-3 text-2xl font-bold">
-        <span>{nameOf(participants, m.a_id)}</span>
-        <span className="text-accent">{m.a_series} - {m.b_series}</span>
-        <span>{nameOf(participants, m.b_id)}</span>
-      </div>
+      <style>{CLEAR_STYLE}</style>
+      <OverlayStage
+        channelKey={expected}
+        game={g}
+        match={match}
+        matches={matches}
+        participants={participants}
+        sponsors={sponsors}
+        showRoster={q.roster !== "0"}
+        stingerVideo={q.stinger}
+      />
     </>
   );
 }

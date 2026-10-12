@@ -1,7 +1,9 @@
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import { createClient, type RealtimeChannel, type SupabaseClient } from "@supabase/supabase-js";
+import type { Scene } from "@/lib/types";
 
-export const matchChannel = (matchId: string) => `match-realtime-${matchId}`;
-export const displayChannel = (gameCode: string) => `display-${gameCode}`;
+// ชื่อ channel มีรหัสลับต่องาน (CHANNEL_KEY ฝั่ง server) กันคนนอกเดาชื่อแล้วยิงเข้า channel
+export const matchChannelName = (key: string, matchId: string) => `praksa-${key}-match-${matchId}`;
+export const displayChannelName = (key: string, gameCode: string) => `praksa-${key}-display-${gameCode}`;
 
 export const EVENTS = {
   sceneChange: "scene_change",
@@ -10,6 +12,23 @@ export const EVENTS = {
   scoreUpdate: "score_update",
   stingerPlay: "stinger_play",
 } as const;
+
+export type HudTone = "info" | "warn" | "alert";
+
+export type HubEventMap = {
+  scene_change: { scene: Scene };
+  score_update: { a_series: number; b_series: number; games: { a: number; b: number }[] };
+  hud_notification: { text: string; tone: HudTone };
+  hud_notification_clear: Record<string, never>;
+  stinger_play: { then_scene?: Scene };
+};
+export type HubEventName = keyof HubEventMap;
+
+export type Bus = {
+  send<E extends HubEventName>(event: E, payload: HubEventMap[E]): void;
+  on(handler: (event: HubEventName, payload: unknown) => void): () => void;
+  close(): void;
+};
 
 let client: SupabaseClient | null | undefined;
 
@@ -20,4 +39,36 @@ export function getRealtimeClient(): SupabaseClient | null {
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   client = url && key ? createClient(url, key) : null;
   return client;
+}
+
+const NOOP_BUS: Bus = { send() {}, on: () => () => {}, close() {} };
+
+/**
+ * เปิดช่องสื่อสาร: มี Supabase env → Realtime broadcast · ไม่มี → BroadcastChannel ของเบราว์เซอร์
+ * (แท็บในเครื่องเดียวกันคุยกันได้) · ไม่มีทั้งคู่ (SSR) → no-op
+ */
+export function openBus(name: string): Bus {
+  if (typeof window === "undefined") return NOOP_BUS;
+  const handlers = new Set<(event: HubEventName, payload: unknown) => void>();
+  const emit = (event: string, payload: unknown) => handlers.forEach((h) => h(event as HubEventName, payload));
+
+  const sb = getRealtimeClient();
+  if (sb) {
+    const ch: RealtimeChannel = sb.channel(name, { config: { broadcast: { self: true } } });
+    ch.on("broadcast", { event: "*" }, (m) => emit(m.event, m.payload)).subscribe();
+    return {
+      send: (event, payload) => void ch.send({ type: "broadcast", event, payload }),
+      on: (h) => (handlers.add(h), () => handlers.delete(h)),
+      close: () => void sb.removeChannel(ch),
+    };
+  }
+
+  if (typeof BroadcastChannel === "undefined") return NOOP_BUS;
+  const bc = new BroadcastChannel(name);
+  bc.onmessage = (e: MessageEvent<{ event: string; payload: unknown }>) => emit(e.data.event, e.data.payload);
+  return {
+    send: (event, payload) => bc.postMessage({ event, payload }),
+    on: (h) => (handlers.add(h), () => handlers.delete(h)),
+    close: () => bc.close(),
+  };
 }
