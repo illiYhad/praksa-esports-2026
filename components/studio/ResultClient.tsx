@@ -21,28 +21,34 @@ type Confirm = "certify" | "uncertify" | null;
 const btn = "rounded bg-surface px-3 py-2 text-sm font-bold hover:bg-white/10 disabled:opacity-40";
 
 export function ResultClient({ games, categories, matches, teams }: Props) {
-  const [gameId, setGameId] = useState(games[0]?.id ?? "");
+  const [categoryId, setCategoryId] = useState(categories[0]?.id ?? "");
   const [filter, setFilter] = useState<MatchStatus | "all">("all");
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
-  const gameOf = (m: Match) => categories.find((c) => c.id === m.category_id)?.game_id;
-  const list = matches.filter((m) => gameOf(m) === gameId && (filter === "all" || m.status === filter));
+  const list = matches
+    .filter((m) => m.category_id === categoryId && (filter === "all" || m.status === filter))
+    .sort((a, b) => (a.round_no ?? 0) - (b.round_no ?? 0) || (a.sort_order ?? 0) - (b.sort_order ?? 0));
   const selected = matches.find((m) => m.id === selectedId);
-  const game = games.find((g) => g.id === gameId);
+  const category = categories.find((c) => c.id === categoryId);
+  const game = games.find((g) => g.id === category?.game_id);
 
   return (
     <div className="w-full min-w-0 space-y-3">
       <div className="flex flex-wrap gap-2">
         <select
           className="min-w-0 flex-1 rounded bg-surface p-2"
-          value={gameId}
+          value={categoryId}
           onChange={(e) => {
-            setGameId(e.target.value);
+            setCategoryId(e.target.value);
             setSelectedId(null);
           }}
         >
           {games.map((g) => (
-            <option key={g.id} value={g.id}>{g.name}</option>
+            <optgroup key={g.id} label={g.name}>
+              {categories.filter((c) => c.game_id === g.id).map((c) => (
+                <option key={c.id} value={c.id}>{c.name}</option>
+              ))}
+            </optgroup>
           ))}
         </select>
         <select className="min-w-0 flex-1 rounded bg-surface p-2" value={filter} onChange={(e) => setFilter(e.target.value as MatchStatus | "all")}>

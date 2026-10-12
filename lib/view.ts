@@ -36,6 +36,21 @@ export const stageLabel: Record<MatchStage, string> = {
   group: "รอบแบ่งกลุ่ม / พบกันหมด",
 };
 
+/** ISO → ค่าช่อง datetime-local ตามเวลาไทย (YYYY-MM-DDTHH:mm) */
+export function toLocalInput(iso?: string): string {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const p = (n: number) => String(n).padStart(2, "0");
+  const parts = new Intl.DateTimeFormat("en-GB", {
+    timeZone: "Asia/Bangkok", year: "numeric", month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", hour12: false,
+  }).formatToParts(d);
+  const get = (t: string) => parts.find((x) => x.type === t)?.value ?? "";
+  return `${get("year")}-${get("month")}-${get("day")}T${p(Number(get("hour")) % 24)}:${get("minute")}`;
+}
+
+/** ค่าช่อง datetime-local (เวลาไทย) → ISO */
+export const fromLocalInput = (v: string) => (v ? new Date(`${v}:00+07:00`).toISOString() : null);
+
 /** สปอนเซอร์ที่เปิดใช้ในตำแหน่งนั้น เรียงตาม sequence */
 export const sponsorsAt = (sponsors: Sponsor[], position: SponsorPosition) =>
   sponsors.filter((s) => s.is_active && s.position === position).sort((a, b) => a.sequence - b.sequence);

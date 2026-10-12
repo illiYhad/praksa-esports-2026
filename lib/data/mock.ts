@@ -1,6 +1,7 @@
 import type { DataSource } from "./source";
 import { subscribeDataChanges } from "./live";
-import { db } from "./store";
+import { db, mergeRoster } from "./store";
+import { abbreviateOrg, parseRoster, personKey } from "./roster-parse";
 import { checkFinished, checkProgress, seriesFromGames, usesGoalsDirect } from "@/lib/match-logic";
 import {
   DEFAULT_SETTING,
@@ -13,9 +14,11 @@ import {
   type MatchDraft,
 } from "@/lib/bracket/generate";
 import { computeStandings } from "@/lib/bracket/standings";
-import type { Category, CategorySetting, GameScore, Match } from "@/lib/types";
+import type { Category, CategorySetting, GameScore, Match, Player, Sponsor, Team } from "@/lib/types";
 
 const NOW = () => new Date().toISOString();
+let seq = 0;
+const newId = (prefix: string) => `${prefix}-${Date.now().toString(36)}-${(++seq).toString(36)}`;
 
 const must = <T,>(row: T | undefined, what: string): T => {
   if (!row) throw new Error(`ไม่พบ${what}`);
@@ -277,6 +280,186 @@ export const mockSource: DataSource = {
     }
     if (resolution === "walkover" || resolution === "cancel") removeMatches((m) => m.category_id === categoryId);
     return upsertSetting(categoryId, { single_entry: resolution, merge_into_category_id: undefined });
+  },
+
+  // ---------- ทีม / นักกีฬา ----------
+
+  async createTeam(categoryId, input) {
+    const cat = categoryOf(categoryId);
+    const name = input.name?.trim();
+    if (!name) throw new Error("ต้องใส่ชื่อทีม/นักกีฬา");
+    const team: Team = {
+      id: newId("t"),
+      category_id: cat.id,
+      team_code: input.team_code?.trim() || undefined,
+      name,
+      short_name: input.short_name?.trim() || abbreviateOrg(name),
+      logo_url: input.logo_url,
+      is_checked_in: false,
+    };
+    db.teams.push(team);
+    return team;
+  },
+
+  async updateTeam(teamId, patch) {
+    const t = must(db.teams.find((x) => x.id === teamId), "ทีม/นักกีฬา");
+    if (patch.category_id && patch.category_id !== t.category_id) {
+      const from = categoryOf(t.category_id);
+      const to = categoryOf(patch.category_id);
+      if (from.game_id !== to.game_id) throw new Error("ย้ายได้เฉพาะประเภทของเกมเดียวกัน");
+      if (db.matches.some((m) => m.team_a_id === teamId || m.team_b_id === teamId)) throw new Error("ทีมนี้อยู่ในสายแล้ว — ต้องสร้างสายใหม่ก่อนจึงย้ายได้");
+      t.category_id = to.id;
+    }
+    if (patch.name !== undefined) {
+      const name = patch.name.trim();
+      if (!name) throw new Error("ชื่อห้ามว่าง");
+      t.name = name;
+    }
+    if (patch.short_name !== undefined) t.short_name = patch.short_name.trim() || abbreviateOrg(t.name);
+    if (patch.logo_url !== undefined) t.logo_url = patch.logo_url || undefined;
+    if (patch.team_code !== undefined) {
+      t.team_code = patch.team_code.trim() || undefined;
+      for (const p of db.players.filter((x) => x.team_id === t.id)) if (p.real_name) p.person_key = personKey(p.real_name, t.team_code ?? t.id);
+    }
+    return t;
+  },
+
+  async deleteTeam(teamId) {
+    must(db.teams.find((x) => x.id === teamId), "ทีม/นักกีฬา");
+    if (db.matches.some((m) => m.team_a_id === teamId || m.team_b_id === teamId)) throw new Error("ทีมนี้อยู่ในสายแล้ว ลบไม่ได้ (สร้างสายใหม่ก่อน)");
+    db.players = db.players.filter((p) => p.team_id !== teamId);
+    db.teams = db.teams.filter((t) => t.id !== teamId);
+  },
+
+  async createPlayer(teamId, input) {
+    const t = must(db.teams.find((x) => x.id === teamId), "ทีม");
+    const real = input.real_name?.trim() || undefined;
+    const ign = input.in_game_name?.trim() ?? "";
+    if (!real && !ign) throw new Error("ต้องใส่ชื่อจริงหรือชื่อในเกมอย่างน้อยหนึ่งอย่าง");
+    const used = db.players.filter((p) => p.team_id === t.id).map((p) => p.order_in_team ?? 0);
+    const order = input.order_in_team ?? (used.length ? Math.max(...used) + 1 : 1);
+    const p: Player = {
+      id: newId("p"),
+      team_id: t.id,
+      real_name: real,
+      in_game_name: ign,
+      is_captain: !!input.is_captain,
+      order_in_team: order,
+      position: input.position?.trim() || undefined,
+      person_key: real ? personKey(real, t.team_code ?? t.id) : undefined,
+    };
+    if (p.is_captain) for (const x of db.players) if (x.team_id === t.id) x.is_captain = false;
+    db.players.push(p);
+    return p;
+  },
+
+  async updatePlayer(playerId, patch) {
+    const p = must(db.players.find((x) => x.id === playerId), "นักกีฬา");
+    if (patch.team_id && patch.team_id !== p.team_id) {
+      must(db.teams.find((x) => x.id === patch.team_id), "ทีมปลายทาง");
+      p.team_id = patch.team_id;
+      p.is_captain = false;
+    }
+    if (patch.real_name !== undefined) p.real_name = patch.real_name.trim() || undefined;
+    if (patch.in_game_name !== undefined) p.in_game_name = patch.in_game_name.trim();
+    if (patch.position !== undefined) p.position = patch.position.trim() || undefined;
+    if (patch.order_in_team !== undefined) p.order_in_team = patch.order_in_team;
+    if (patch.is_captain) {
+      for (const x of db.players) if (x.team_id === p.team_id) x.is_captain = false;
+      p.is_captain = true;
+    } else if (patch.is_captain === false) p.is_captain = false;
+    if (!p.real_name && !p.in_game_name) throw new Error("ต้องมีชื่อจริงหรือชื่อในเกมอย่างน้อยหนึ่งอย่าง");
+    const t = must(db.teams.find((x) => x.id === p.team_id), "ทีม");
+    p.person_key = p.real_name ? personKey(p.real_name, t.team_code ?? t.id) : undefined;
+    return p;
+  },
+
+  async deletePlayer(playerId) {
+    must(db.players.find((x) => x.id === playerId), "นักกีฬา");
+    db.players = db.players.filter((p) => p.id !== playerId);
+  },
+
+  async previewImport(text) {
+    const roster = parseRoster(text);
+    if (!roster.players.length) throw new Error("ไม่พบรายชื่อนักกีฬาในข้อความ (ต้องมีส่วน ## players)");
+    // พรีวิวบน store จริงแบบไม่เขียน
+    return mergeRoster(db, roster, false);
+  },
+
+  async applyImport(text) {
+    const roster = parseRoster(text);
+    if (!roster.players.length) throw new Error("ไม่พบรายชื่อนักกีฬาในข้อความ (ต้องมีส่วน ## players)");
+    return mergeRoster(db, roster, true);
+  },
+
+  // ---------- ตาราง / สถานี ----------
+
+  async updateMatchSchedule(matchId, patch) {
+    const m = matchOf(matchId);
+    if (patch.station_id !== undefined) {
+      if (patch.station_id) {
+        const st = must(db.stations.find((s) => s.id === patch.station_id), "สถานี");
+        if (st.game_id !== gameOfMatch(m).id) throw new Error("สถานีต้องเป็นของเกมเดียวกัน");
+        m.station_id = st.id;
+      } else m.station_id = undefined;
+    }
+    if (patch.scheduled_time !== undefined) m.scheduled_time = patch.scheduled_time || undefined;
+    if (patch.best_of !== undefined) {
+      if (m.status !== "scheduled" || m.game_scores.length > 0) throw new Error("แมตช์เริ่มแล้ว เปลี่ยน BO ไม่ได้");
+      if (patch.best_of < 1) throw new Error("BO ต้องอย่างน้อย 1");
+      m.best_of = patch.best_of;
+    }
+    return touch(m);
+  },
+
+  async autoQueue(gameId) {
+    const game = must(db.games.find((g) => g.id === gameId), "เกม");
+    const catIds = new Set(db.categories.filter((c) => c.game_id === game.id).map((c) => c.id));
+    const gameMatches = db.matches.filter((m) => catIds.has(m.category_id));
+    const busy = new Set(gameMatches.filter((m) => m.station_id && (m.status === "ongoing" || m.status === "scheduled")).map((m) => m.station_id));
+    const free = db.stations.filter((s) => s.game_id === game.id && !busy.has(s.id));
+    const ready = gameMatches
+      .filter((m) => m.status === "scheduled" && m.team_a_id && m.team_b_id && !m.station_id)
+      .sort((a, b) => (a.round_no ?? 0) - (b.round_no ?? 0) || a.category_id.localeCompare(b.category_id) || (a.sort_order ?? 0) - (b.sort_order ?? 0));
+    const assigned: Match[] = [];
+    for (let i = 0; i < Math.min(free.length, ready.length); i++) {
+      ready[i].station_id = free[i].id;
+      if (!ready[i].scheduled_time) ready[i].scheduled_time = NOW();
+      assigned.push(touch(ready[i]));
+    }
+    return assigned;
+  },
+
+  // ---------- สปอนเซอร์ ----------
+
+  async createSponsor(input) {
+    if (!input.name?.trim()) throw new Error("ต้องใส่ชื่อสปอนเซอร์");
+    const s: Sponsor = { ...input, id: newId("sp"), name: input.name.trim() };
+    db.sponsors.push(s);
+    return s;
+  },
+  async updateSponsor(sponsorId, patch) {
+    const s = must(db.sponsors.find((x) => x.id === sponsorId), "สปอนเซอร์");
+    Object.assign(s, patch);
+    if (!s.name.trim()) throw new Error("ชื่อห้ามว่าง");
+    return s;
+  },
+  async deleteSponsor(sponsorId) {
+    must(db.sponsors.find((x) => x.id === sponsorId), "สปอนเซอร์");
+    db.sponsors = db.sponsors.filter((s) => s.id !== sponsorId);
+  },
+
+  // ---------- ตั้งค่างาน ----------
+
+  async getEventConfig() { return db.eventConfig; },
+  async saveEventConfig(patch) {
+    if (patch.days) {
+      const bad = patch.days.find((d) => d && !/^\d{4}-\d{2}-\d{2}$/.test(d));
+      if (bad) throw new Error(`รูปแบบวันที่ผิด: ${bad}`);
+      patch = { ...patch, days: patch.days.filter(Boolean) };
+    }
+    Object.assign(db.eventConfig, patch, { updated_at: NOW() });
+    return db.eventConfig;
   },
 
   subscribe: subscribeDataChanges,

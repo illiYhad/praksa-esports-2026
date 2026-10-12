@@ -1,12 +1,9 @@
 "use server";
 
 import { data } from "@/lib/data";
+import { run, type ActionResult } from "@/lib/actions";
 
-export async function setCheckInAction(teamId: string, checkedIn: boolean): Promise<{ ok: boolean; error?: string }> {
-  try {
-    await data.setCheckIn(teamId, checkedIn);
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "เกิดข้อผิดพลาด" };
-  }
+// ยังไม่มีระบบล็อกอิน — เฟส F จะตรวจบทบาท admin/result_staff
+export async function setCheckInAction(teamId: string, checkedIn: boolean): Promise<ActionResult> {
+  return run(async () => void (await data.setCheckIn(teamId, checkedIn)));
 }

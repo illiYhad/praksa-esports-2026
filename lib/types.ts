@@ -30,8 +30,32 @@ export type Player = {
   in_game_name: string;
   is_captain: boolean;
   order_in_team?: number;
+  /** ตำแหน่ง: ROV = เลน · SF6 = ตัวละครหลัก · eFootball = ทีมที่ใช้ (บล็อก 10) */
+  position?: string;
   /** คนเดียวกันข้ามประเภท = ชื่อจริง + team_code · ใช้ผูกรูปถ่าย (บล็อก 10) */
   person_key?: string;
+};
+
+/** ตั้งค่างาน (ตาราง event_config แถวเดียว · ขอเพิ่ม บล็อก 10) */
+export type EventConfig = {
+  /** วันแข่ง 1–4 (YYYY-MM-DD) */
+  days: string[];
+  /** ข้อความประกาศหน้าแรก (ว่าง = ไม่แสดง) */
+  announcement: string;
+  logo_url?: string;
+  theme?: { accent?: string; accent2?: string; bg?: string };
+  updated_at: string;
+};
+
+/** ผลพรีวิว/นำเข้ารายชื่อจากข้อความรูปแบบ ROSTER */
+export type ImportPreview = {
+  newCategories: string[];
+  unknownGames: string[];
+  newTeams: number;
+  existingTeams: number;
+  newPlayers: number;
+  existingPlayers: number;
+  errors: string[];
 };
 
 export type MatchStatus = "scheduled" | "ongoing" | "ended" | "certified";

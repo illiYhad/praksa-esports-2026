@@ -1,8 +1,10 @@
 import type {
   Category,
   CategorySetting,
+  EventConfig,
   Game,
   GameScore,
+  ImportPreview,
   Match,
   MatchAuditLog,
   Player,
@@ -11,6 +13,10 @@ import type {
   Station,
   Team,
 } from "@/lib/types";
+
+export type TeamInput = Partial<Pick<Team, "name" | "short_name" | "logo_url" | "team_code" | "category_id">>;
+export type PlayerInput = Partial<Pick<Player, "real_name" | "in_game_name" | "is_captain" | "position" | "order_in_team" | "team_id">>;
+export type SchedulePatch = { station_id?: string | null; scheduled_time?: string | null; best_of?: number };
 
 export interface DataSource {
   // อ่าน
@@ -24,6 +30,7 @@ export interface DataSource {
   getAuditLogs(matchId: string): Promise<MatchAuditLog[]>;
   /** ตั้งค่ารูปแบบแข่งทุกประเภท (ประเภทที่ยังไม่ตั้ง = ค่าเริ่มต้น) */
   getCategorySettings(): Promise<CategorySetting[]>;
+  getEventConfig(): Promise<EventConfig>;
 
   // ผลแมตช์ — ผิดกติกาให้ throw Error ข้อความไทย
   /** บันทึกสกอร์ระหว่างแข่ง → status=ongoing */
@@ -46,6 +53,32 @@ export interface DataSource {
   generateKnockout(categoryId: string): Promise<Match[]>;
   /** ประเภทที่มีผู้สมัครคนเดียว: ได้รางวัลโดยไม่มีคู่แข่ง / ยุบรวม / ยกเลิก */
   resolveSingleEntry(categoryId: string, resolution: SingleEntryResolution, mergeInto?: string): Promise<CategorySetting>;
+
+  // ทีม / นักกีฬา (แอดมิน)
+  createTeam(categoryId: string, input: TeamInput & { name: string }): Promise<Team>;
+  updateTeam(teamId: string, patch: TeamInput): Promise<Team>;
+  /** ลบไม่ได้ถ้าทีมอยู่ในแมตช์ */
+  deleteTeam(teamId: string): Promise<void>;
+  createPlayer(teamId: string, input: PlayerInput): Promise<Player>;
+  updatePlayer(playerId: string, patch: PlayerInput): Promise<Player>;
+  deletePlayer(playerId: string): Promise<void>;
+
+  // นำเข้ารายชื่อ (ข้อความรูปแบบไฟล์ ROSTER) — ซ้ำไม่สร้างซ้ำ
+  previewImport(text: string): Promise<ImportPreview>;
+  applyImport(text: string): Promise<ImportPreview>;
+
+  // ตาราง / สถานี
+  updateMatchSchedule(matchId: string, patch: SchedulePatch): Promise<Match>;
+  /** จัดคิวอัตโนมัติ: แมตช์ที่พร้อมเล่น (ครบสองฝั่ง ยังไม่มีสถานี) เรียงตามรอบ → สถานีว่างของเกมนั้น */
+  autoQueue(gameId: string): Promise<Match[]>;
+
+  // สปอนเซอร์
+  createSponsor(input: Omit<Sponsor, "id">): Promise<Sponsor>;
+  updateSponsor(sponsorId: string, patch: Partial<Omit<Sponsor, "id">>): Promise<Sponsor>;
+  deleteSponsor(sponsorId: string): Promise<void>;
+
+  // ตั้งค่างาน
+  saveEventConfig(patch: Partial<Omit<EventConfig, "updated_at">>): Promise<EventConfig>;
 
   /** ฟังการเปลี่ยนของข้อมูล (ไม่มีคำสั่งควบคุม) — mock: BroadcastChannel · Supabase: postgres_changes */
   subscribe(onChange: () => void): () => void;
