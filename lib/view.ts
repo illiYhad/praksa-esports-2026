@@ -36,6 +36,14 @@ export const stageLabel: Record<MatchStage, string> = {
   group: "รอบแบ่งกลุ่ม / พบกันหมด",
 };
 
+/** ชื่อประเภทแบบสั้น: "ประเภททีมชาย ROV รุ่น 16 ปี" → "ทีมชาย 16 ปี" */
+export function shortCategoryName(name: string, gameName: string): string {
+  let s = name.replace(/^ประเภท/, "");
+  if (gameName) s = s.replace(gameName, "");
+  s = s.replace(/Street Fighter 6|eFootball Mobile|eFootball|ROV/gi, "").replace(/รุ่น/, "").replace(/\(ไม่จำกัดเพศ\)/, "โอเพน");
+  return s.replace(/\s+/g, " ").trim() || name;
+}
+
 /** ISO → ค่าช่อง datetime-local ตามเวลาไทย (YYYY-MM-DDTHH:mm) */
 export function toLocalInput(iso?: string): string {
   if (!iso) return "";

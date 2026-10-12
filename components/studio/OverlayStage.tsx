@@ -1,9 +1,11 @@
 "use client";
 
 import React, { useCallback, useEffect, useRef, useState } from "react";
-import type { Game, Match, Player, Scene, Sponsor, SponsorPosition, Team } from "@/lib/types";
+import type { AthletePhoto, Game, Match, Player, Scene, Sponsor, SponsorPosition, Team } from "@/lib/types";
 import { sponsorsAt } from "@/lib/view";
 import { EVENTS, matchChannelName, openBus, type HubEventMap, type HudTone } from "@/lib/realtime";
+import { athleteName, publicPhoto } from "@/lib/people";
+import { Avatar } from "@/components/profile/Avatar";
 import { SponsorLogo } from "./SponsorLogo";
 import { Stinger } from "./Stinger";
 
@@ -22,11 +24,12 @@ type Props = {
   teams: Team[];
   players: Player[];
   sponsors: Sponsor[];
+  photos: AthletePhoto[];
   showRoster: boolean;
   stingerVideo?: string;
 };
 
-export function OverlayStage({ channelKey, game, match, matches, teams, players, sponsors, showRoster, stingerVideo }: Props) {
+export function OverlayStage({ channelKey, game, match, matches, teams, players, sponsors, photos, showRoster, stingerVideo }: Props) {
   const [scene, setScene] = useState<Scene>(match.status === "ongoing" ? "LIVE" : "STARTING");
   const [score, setScore] = useState({ a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores });
   const [hud, setHud] = useState<{ text: string; tone: HudTone } | null>(null);
@@ -88,15 +91,31 @@ export function OverlayStage({ channelKey, game, match, matches, teams, players,
   const winner = score.a_series > score.b_series ? aName : score.b_series > score.a_series ? bName : null;
   const barSponsor = bars.length ? bars[barIdx % bars.length] : undefined;
 
-  const memberNames = (p?: Team) => (p ? players.filter((x) => x.team_id === p.id).map((x) => x.in_game_name) : []);
-  const roster = (p?: Team) =>
+  const members = (p?: Team) =>
+    p ? players.filter((x) => x.team_id === p.id).sort((x, y) => (x.order_in_team ?? 0) - (y.order_in_team ?? 0)) : [];
+  // รายชื่อ (ROV) มีรูปเล็ก · รูปขึ้นเฉพาะคนที่ยินยอม
+  const roster = (p: Team | undefined, align: "left" | "right") =>
     game.format === "team" && showRoster && p ? (
-      <ul className="mt-2 space-y-0.5 text-xl text-muted">
-        {memberNames(p).map((m) => (
-          <li key={m}>{m}</li>
+      <ul className="mt-2 space-y-1 text-xl text-muted">
+        {members(p).slice(0, 7).map((m) => (
+          <li key={m.id} className={`flex items-center gap-2 ${align === "right" ? "flex-row-reverse" : ""}`}>
+            <Avatar src={publicPhoto(photos, m)?.cutout_url} name={m.real_name ?? athleteName(m)} size="sm" />
+            <span>{athleteName(m)}{m.is_captain ? " (C)" : ""}</span>
+          </li>
         ))}
       </ul>
     ) : null;
+  // ฉาก STARTING: รูปคู่แข่ง (เดี่ยว = รูปใหญ่ 1 รูป · ทีม = สมาชิกสูงสุด 5)
+  const sidePhotos = (p?: Team) => {
+    const ms = members(p);
+    if (!ms.length) return null;
+    if (game.format === "solo") return <Avatar src={publicPhoto(photos, ms[0])?.cutout_url} name={ms[0].real_name ?? athleteName(ms[0])} size="xl" />;
+    return (
+      <div className="flex gap-3">
+        {ms.slice(0, 5).map((m) => <Avatar key={m.id} src={publicPhoto(photos, m)?.cutout_url} name={m.real_name ?? athleteName(m)} size="lg" />)}
+      </div>
+    );
+  };
 
   const rounds = [...new Set(matches.map((m) => m.round_name))];
 
@@ -106,8 +125,10 @@ export function OverlayStage({ channelKey, game, match, matches, teams, players,
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-8 bg-bg/90">
           <div className="text-4xl text-accent">{EVENT_TITLE}</div>
           <div className="text-7xl font-black">เริ่มเร็ว ๆ นี้</div>
-          <div className="text-5xl font-bold">
-            {aName} <span className="text-accent-2">vs</span> {bName}
+          <div className="flex items-end justify-center gap-10">
+            <div className="flex flex-col items-center gap-3">{sidePhotos(a)}<div className="text-5xl font-bold">{aName}</div></div>
+            <div className="pb-6 text-5xl text-accent-2">vs</div>
+            <div className="flex flex-col items-center gap-3">{sidePhotos(b)}<div className="text-5xl font-bold">{bName}</div></div>
           </div>
           <div className="text-3xl text-muted">{match.round_name} · {game.name}</div>
         </div>
@@ -118,7 +139,7 @@ export function OverlayStage({ channelKey, game, match, matches, teams, players,
           <div className="absolute bottom-24 left-1/2 flex -translate-x-1/2 items-stretch overflow-hidden rounded-xl bg-bg/90 shadow-2xl">
             <div className="min-w-[520px] px-8 py-4 text-right">
               <div className="text-5xl font-black">{aName}</div>
-              {roster(a)}
+              {roster(a, "right")}
             </div>
             <div className="flex flex-col items-center justify-center bg-surface px-8">
               <div className="text-7xl font-black text-accent">
@@ -136,7 +157,7 @@ export function OverlayStage({ channelKey, game, match, matches, teams, players,
             </div>
             <div className="min-w-[520px] px-8 py-4">
               <div className="text-5xl font-black">{bName}</div>
-              {roster(b)}
+              {roster(b, "left")}
             </div>
           </div>
         </>

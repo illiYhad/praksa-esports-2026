@@ -11,6 +11,7 @@ const TABS: { href: string; label: string }[] = [
   { href: "/admin/schedule", label: "ตาราง / สถานี" },
   { href: "/admin/sponsors", label: "สปอนเซอร์" },
   { href: "/admin/settings", label: "ตั้งค่างาน" },
+  { href: "/admin/photos", label: "ถ่ายรูป" },
   { href: "/admin/result", label: "กรอกผล" },
   { href: "/checkin", label: "เช็กอิน" },
 ];

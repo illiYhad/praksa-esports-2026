@@ -1,4 +1,5 @@
 import type {
+  AthletePhoto,
   Category,
   CategorySetting,
   EventConfig,
@@ -14,9 +15,13 @@ import type {
   Team,
 } from "@/lib/types";
 
-export type TeamInput = Partial<Pick<Team, "name" | "short_name" | "logo_url" | "team_code" | "category_id">>;
-export type PlayerInput = Partial<Pick<Player, "real_name" | "in_game_name" | "is_captain" | "position" | "order_in_team" | "team_id">>;
+export type TeamInput = Partial<Pick<Team, "name" | "short_name" | "logo_url" | "photo_url" | "team_code" | "category_id">>;
+export type PlayerInput = Partial<
+  Pick<Player, "real_name" | "in_game_name" | "is_captain" | "position" | "order_in_team" | "team_id" | "quote" | "hide_real_name">
+>;
 export type SchedulePatch = { station_id?: string | null; scheduled_time?: string | null; best_of?: number };
+export type PhotoUpload = { original: Uint8Array; originalMime: string; cutout: Uint8Array; consent: boolean };
+export type PhotoKind = "original" | "cutout";
 
 export interface DataSource {
   // อ่าน
@@ -31,6 +36,7 @@ export interface DataSource {
   /** ตั้งค่ารูปแบบแข่งทุกประเภท (ประเภทที่ยังไม่ตั้ง = ค่าเริ่มต้น) */
   getCategorySettings(): Promise<CategorySetting[]>;
   getEventConfig(): Promise<EventConfig>;
+  getPhotos(): Promise<AthletePhoto[]>;
 
   // ผลแมตช์ — ผิดกติกาให้ throw Error ข้อความไทย
   /** บันทึกสกอร์ระหว่างแข่ง → status=ongoing */
@@ -79,6 +85,13 @@ export interface DataSource {
 
   // ตั้งค่างาน
   saveEventConfig(patch: Partial<Omit<EventConfig, "updated_at">>): Promise<EventConfig>;
+
+  // รูปนักกีฬา (ผูกกับ person_key ใช้ได้ทุกประเภท)
+  savePhoto(personKey: string, upload: PhotoUpload): Promise<AthletePhoto>;
+  setPhotoConsent(photoId: string, consent: boolean): Promise<AthletePhoto>;
+  deletePhoto(photoId: string): Promise<void>;
+  /** ไฟล์รูป (mock เก็บในหน่วยความจำ) — Supabase อาจคืน redirect ไป Storage แทน */
+  getPhotoFile(photoId: string, kind: PhotoKind): Promise<{ bytes: Uint8Array; mime: string } | { redirect: string } | null>;
 
   /** ฟังการเปลี่ยนของข้อมูล (ไม่มีคำสั่งควบคุม) — mock: BroadcastChannel · Supabase: postgres_changes */
   subscribe(onChange: () => void): () => void;

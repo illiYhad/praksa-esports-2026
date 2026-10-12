@@ -11,9 +11,11 @@ type Props = {
   setting?: CategorySetting;
   compact?: boolean;
   highlightId?: string;
+  /** เน้นทุกแมตช์ที่ทีมนี้อยู่ (หน้าทีม) */
+  highlightTeamId?: string;
 };
 
-export function BracketView({ matches, teams, setting, compact, highlightId }: Props) {
+export function BracketView({ matches, teams, setting, compact, highlightId, highlightTeamId }: Props) {
   const nm = (id?: string) => teams.find((t) => t.id === id)?.short_name ?? teams.find((t) => t.id === id)?.name ?? "รอผลคู่ก่อนหน้า";
   if (!matches.length) return <p className="text-sm text-muted">ยังไม่ได้จัดสาย</p>;
 
@@ -34,7 +36,7 @@ export function BracketView({ matches, teams, setting, compact, highlightId }: P
     return (
       <div
         className={`relative rounded bg-surface p-2 text-sm ${m.status === "ongoing" ? "ring-1 ring-live" : ""} ${
-          m.id === highlightId ? "ring-2 ring-accent" : ""
+          m.id === highlightId || (highlightTeamId && (m.team_a_id === highlightTeamId || m.team_b_id === highlightTeamId)) ? "ring-2 ring-accent-2" : ""
         }`}
       >
         {m.status === "ongoing" && (

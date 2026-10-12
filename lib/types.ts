@@ -20,6 +20,8 @@ export type Team = {
   name: string;
   short_name?: string;
   logo_url?: string;
+  /** รูปทีม (บล็อก 10) */
+  photo_url?: string;
   is_checked_in: boolean;
 };
 
@@ -32,8 +34,23 @@ export type Player = {
   order_in_team?: number;
   /** ตำแหน่ง: ROV = เลน · SF6 = ตัวละครหลัก · eFootball = ทีมที่ใช้ (บล็อก 10) */
   position?: string;
+  /** คำพูดประจำตัว (บล็อก 10) */
+  quote?: string;
+  /** ซ่อนชื่อจริงบนหน้าสาธารณะ — แสดงชื่อในเกมหรืออักษรย่อแทน (บล็อก 10) */
+  hide_real_name?: boolean;
   /** คนเดียวกันข้ามประเภท = ชื่อจริง + team_code · ใช้ผูกรูปถ่าย (บล็อก 10) */
   person_key?: string;
+};
+
+/** รูปนักกีฬา 1 แถวต่อคน (ตาราง athlete_photos · บล็อก 10) — URL ชี้ไป /api/photos/… (mock) หรือ Storage (Supabase) */
+export type AthletePhoto = {
+  id: string;
+  person_key: string;
+  original_url: string;
+  cutout_url: string;
+  /** ได้รับความยินยอมให้ใช้รูป (เยาวชน = ผู้ปกครอง) — false = ไม่แสดงบนหน้าสาธารณะ */
+  consent: boolean;
+  updated_at: string;
 };
 
 /** ตั้งค่างาน (ตาราง event_config แถวเดียว · ขอเพิ่ม บล็อก 10) */

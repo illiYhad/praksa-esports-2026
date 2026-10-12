@@ -16,6 +16,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <Link href="/" className="font-bold text-accent">{EVENT.shortTitle}</Link>
           <nav className="flex flex-wrap gap-4 text-sm text-muted">
             <Link href="/bracket/rov">สาย</Link>
+            <Link href="/athletes">นักกีฬา</Link>
+            <Link href="/teams">ทีม</Link>
             <Link href="/display/rov">บอร์ดสถานี</Link>
             <Link href="/checkin">เช็กอิน</Link>
             <Link href="/admin">แอดมิน</Link>

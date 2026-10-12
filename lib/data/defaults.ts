@@ -1,5 +1,19 @@
-import type { Category, CategorySetting, EventConfig, Game, Match, MatchAuditLog, Player, Sponsor, Station, Team } from "@/lib/types";
+import type {
+  AthletePhoto,
+  Category,
+  CategorySetting,
+  EventConfig,
+  Game,
+  Match,
+  MatchAuditLog,
+  Player,
+  Sponsor,
+  Station,
+  Team,
+} from "@/lib/types";
 import { EVENT } from "@/lib/event";
+
+export type PhotoFiles = { original: Uint8Array; originalMime: string; cutout: Uint8Array };
 
 export type Store = {
   games: Game[];
@@ -12,6 +26,9 @@ export type Store = {
   audit: MatchAuditLog[];
   settings: CategorySetting[];
   eventConfig: EventConfig;
+  photos: AthletePhoto[];
+  /** ไฟล์รูปในหน่วยความจำ (mock) key = photo id */
+  photoFiles: Map<string, PhotoFiles>;
 };
 
 /** วันแข่ง 1–4 ตั้งต้น = วันแรกจริง + วันถัดไปเรียงกัน (แอดมินแก้ได้ในตั้งค่างาน) */
@@ -35,4 +52,6 @@ export const emptyStore = (): Store => ({
   audit: [],
   settings: [],
   eventConfig: defaultEventConfig(),
+  photos: [],
+  photoFiles: new Map(),
 });

@@ -2,6 +2,7 @@ import type { DataSource } from "./source";
 import { subscribeDataChanges } from "./live";
 import { db, mergeRoster } from "./store";
 import { abbreviateOrg, parseRoster, personKey } from "./roster-parse";
+import { photoIdFor } from "@/lib/people";
 import { checkFinished, checkProgress, seriesFromGames, usesGoalsDirect } from "@/lib/match-logic";
 import {
   DEFAULT_SETTING,
@@ -14,7 +15,7 @@ import {
   type MatchDraft,
 } from "@/lib/bracket/generate";
 import { computeStandings } from "@/lib/bracket/standings";
-import type { Category, CategorySetting, GameScore, Match, Player, Sponsor, Team } from "@/lib/types";
+import type { AthletePhoto, Category, CategorySetting, GameScore, Match, Player, Sponsor, Team } from "@/lib/types";
 
 const NOW = () => new Date().toISOString();
 let seq = 0;
@@ -317,6 +318,7 @@ export const mockSource: DataSource = {
     }
     if (patch.short_name !== undefined) t.short_name = patch.short_name.trim() || abbreviateOrg(t.name);
     if (patch.logo_url !== undefined) t.logo_url = patch.logo_url || undefined;
+    if (patch.photo_url !== undefined) t.photo_url = patch.photo_url || undefined;
     if (patch.team_code !== undefined) {
       t.team_code = patch.team_code.trim() || undefined;
       for (const p of db.players.filter((x) => x.team_id === t.id)) if (p.real_name) p.person_key = personKey(p.real_name, t.team_code ?? t.id);
@@ -363,6 +365,8 @@ export const mockSource: DataSource = {
     if (patch.real_name !== undefined) p.real_name = patch.real_name.trim() || undefined;
     if (patch.in_game_name !== undefined) p.in_game_name = patch.in_game_name.trim();
     if (patch.position !== undefined) p.position = patch.position.trim() || undefined;
+    if (patch.quote !== undefined) p.quote = patch.quote.trim() || undefined;
+    if (patch.hide_real_name !== undefined) p.hide_real_name = patch.hide_real_name;
     if (patch.order_in_team !== undefined) p.order_in_team = patch.order_in_team;
     if (patch.is_captain) {
       for (const x of db.players) if (x.team_id === p.team_id) x.is_captain = false;
@@ -460,6 +464,48 @@ export const mockSource: DataSource = {
     }
     Object.assign(db.eventConfig, patch, { updated_at: NOW() });
     return db.eventConfig;
+  },
+
+  // ---------- รูปนักกีฬา ----------
+
+  async getPhotos() { return db.photos; },
+
+  async savePhoto(personKey, upload) {
+    if (!personKey) throw new Error("ไม่มีกุญแจนักกีฬา");
+    if (!upload.cutout.length || !upload.original.length) throw new Error("ไม่มีข้อมูลรูป");
+    const id = photoIdFor(personKey);
+    db.photoFiles.set(id, { original: upload.original, originalMime: upload.originalMime || "image/jpeg", cutout: upload.cutout });
+    const v = Date.now().toString(36);
+    const row: AthletePhoto = {
+      id,
+      person_key: personKey,
+      original_url: `/api/photos/${id}/original?v=${v}`,
+      cutout_url: `/api/photos/${id}/cutout?v=${v}`,
+      consent: upload.consent,
+      updated_at: NOW(),
+    };
+    const i = db.photos.findIndex((p) => p.id === id);
+    if (i >= 0) db.photos[i] = row;
+    else db.photos.push(row);
+    return row;
+  },
+
+  async setPhotoConsent(photoId, consent) {
+    const p = must(db.photos.find((x) => x.id === photoId), "รูป");
+    p.consent = consent;
+    p.updated_at = NOW();
+    return p;
+  },
+
+  async deletePhoto(photoId) {
+    db.photos = db.photos.filter((p) => p.id !== photoId);
+    db.photoFiles.delete(photoId);
+  },
+
+  async getPhotoFile(photoId, kind) {
+    const f = db.photoFiles.get(photoId);
+    if (!f) return null;
+    return kind === "original" ? { bytes: f.original, mime: f.originalMime } : { bytes: f.cutout, mime: "image/png" };
   },
 
   subscribe: subscribeDataChanges,

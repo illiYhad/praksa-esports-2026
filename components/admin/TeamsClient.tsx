@@ -88,7 +88,14 @@ export function TeamsClient({ games, categories, teams, players, inBracket }: Pr
 }
 
 function TeamEditor({ team, game, categories, teams, players, locked }: { team: Team; game: Game; categories: Category[]; teams: Team[]; players: Player[]; locked: boolean }) {
-  const [form, setForm] = useState({ name: team.name, short_name: team.short_name ?? "", team_code: team.team_code ?? "", category_id: team.category_id });
+  const [form, setForm] = useState({
+    name: team.name,
+    short_name: team.short_name ?? "",
+    team_code: team.team_code ?? "",
+    category_id: team.category_id,
+    logo_url: team.logo_url ?? "",
+    photo_url: team.photo_url ?? "",
+  });
   const [np, setNp] = useState({ real_name: "", in_game_name: "", position: "" });
   const { busy, msg, act } = useAct();
   return (
@@ -103,6 +110,8 @@ function TeamEditor({ team, game, categories, teams, players, locked }: { team: 
             {categories.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
           </select>
         </label>
+        <label className="flex flex-col text-xs text-muted sm:col-span-2">URL โลโก้ทีม<input className={field} placeholder="https://…" value={form.logo_url} onChange={(e) => setForm({ ...form, logo_url: e.target.value })} /></label>
+        <label className="flex flex-col text-xs text-muted sm:col-span-2">URL รูปทีม<input className={field} placeholder="https://…" value={form.photo_url} onChange={(e) => setForm({ ...form, photo_url: e.target.value })} /></label>
       </div>
       <div className="flex flex-wrap gap-2">
         <button className={`${btn} text-accent`} disabled={busy} onClick={() => act(() => updateTeamAction(team.id, form), "บันทึกทีมแล้ว")}>บันทึกทีม</button>
@@ -138,14 +147,29 @@ function TeamEditor({ team, game, categories, teams, players, locked }: { team: 
 }
 
 function PlayerRow({ player, teams }: { player: Player; teams: Team[] }) {
-  const [f, setF] = useState({ real_name: player.real_name ?? "", in_game_name: player.in_game_name, position: player.position ?? "", order_in_team: player.order_in_team ?? 0 });
+  const [f, setF] = useState({
+    real_name: player.real_name ?? "",
+    in_game_name: player.in_game_name,
+    position: player.position ?? "",
+    order_in_team: player.order_in_team ?? 0,
+    quote: player.quote ?? "",
+    hide_real_name: !!player.hide_real_name,
+  });
   const [moveTo, setMoveTo] = useState(player.team_id);
   const { busy, act } = useAct();
   return (
     <tr className="border-t border-white/5 align-top">
       <td className="py-1"><input type="number" className={`${field} w-12 p-1`} value={f.order_in_team} onChange={(e) => setF({ ...f, order_in_team: Number(e.target.value) })} /></td>
-      <td><input className={`${field} w-full`} value={f.real_name} onChange={(e) => setF({ ...f, real_name: e.target.value })} /></td>
-      <td><input className={`${field} w-full`} value={f.in_game_name} onChange={(e) => setF({ ...f, in_game_name: e.target.value })} /></td>
+      <td>
+        <input className={`${field} w-full`} value={f.real_name} onChange={(e) => setF({ ...f, real_name: e.target.value })} />
+        <label className="mt-1 flex items-center gap-1 text-[11px] text-muted">
+          <input type="checkbox" checked={f.hide_real_name} onChange={(e) => setF({ ...f, hide_real_name: e.target.checked })} /> ซ่อนชื่อจริงบนเว็บ
+        </label>
+      </td>
+      <td>
+        <input className={`${field} w-full`} value={f.in_game_name} onChange={(e) => setF({ ...f, in_game_name: e.target.value })} />
+        <input className={`${field} mt-1 w-full text-xs`} placeholder="คำพูดประจำตัว" value={f.quote} onChange={(e) => setF({ ...f, quote: e.target.value })} />
+      </td>
       <td><input className={`${field} w-full`} value={f.position} onChange={(e) => setF({ ...f, position: e.target.value })} /></td>
       <td className="text-center">
         <input type="radio" name={`captain-${player.team_id}`} checked={player.is_captain} onChange={() => act(() => updatePlayerAction(player.id, { is_captain: true }), "ตั้งกัปตันแล้ว")} aria-label="กัปตัน" />
