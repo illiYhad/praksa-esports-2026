@@ -7,3 +7,6 @@ next-env.d.ts
 
 # รายชื่อนักกีฬาจริง (ผู้เยาว์) — ห้าม commit/push
 data/roster.seed.txt
+
+# ภาพแคปสำหรับใบงาน
+_shots/

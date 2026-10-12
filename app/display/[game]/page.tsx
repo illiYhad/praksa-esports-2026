@@ -2,21 +2,23 @@ import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
 import { LiveRefresh } from "@/components/studio/LiveRefresh";
 import { SponsorTicker } from "@/components/studio/SponsorTicker";
-import { nameOf, sponsorsAt } from "@/lib/view";
+import { nameOf, shortCategoryName, sponsorsAt } from "@/lib/view";
 
 export const dynamic = "force-dynamic";
 
-// หน้าสาธารณะบนจอกลาง: อ่านเฉพาะข้อมูลแมตช์จาก DataSource · ไม่รับ CHANNEL_KEY และไม่ฟังช่องคำสั่งควบคุม
+// หน้าสาธารณะบนจอกลาง (ใช้ Realtime ได้ตามใบงาน): อ่านเฉพาะข้อมูลแมตช์ · ไม่รับ CHANNEL_KEY · แสดงทุกประเภทของเกม
 export default async function DisplayPage({ params }: { params: Promise<{ game: string }> }) {
   const { game } = await params;
   const g = (await data.getGames()).find((x) => x.code === game);
   if (!g) notFound();
-  const [stations, matches, teams, sponsors] = await Promise.all([
+  const [categories, stations, matches, teams, sponsors] = await Promise.all([
+    data.getCategories(g.id),
     data.getStations(g.id),
     data.getMatches(g.id),
     data.getTeams(g.id),
     data.getSponsors(),
   ]);
+  const catLabel = (id: string) => shortCategoryName(categories.find((c) => c.id === id)?.name ?? "", g.name);
   const vs = (m?: (typeof matches)[number]) => (m ? `${nameOf(teams, m.team_a_id)} vs ${nameOf(teams, m.team_b_id)}` : "-");
   const latest = matches
     .filter((m) => m.status === "certified")
@@ -25,7 +27,7 @@ export default async function DisplayPage({ params }: { params: Promise<{ game: 
   const cols = stations.length > 4 ? "grid-cols-4" : stations.length > 1 ? "grid-cols-2" : "grid-cols-1";
   return (
     <>
-      <style>{"header{display:none}main{max-width:none;padding:0}"}</style>
+      <style>{"header,footer{display:none}main{max-width:none;padding:0}"}</style>
       <LiveRefresh />
       <div className="flex min-h-screen flex-col gap-4 p-8" style={{ minHeight: 1080, width: "100%" }}>
         <h1 className="text-4xl font-black">
@@ -43,14 +45,14 @@ export default async function DisplayPage({ params }: { params: Promise<{ game: 
                 <div className="text-2xl font-bold text-accent">{s.name}</div>
                 {now ? (
                   <div>
-                    <div className="text-sm text-live">● กำลังแข่ง · {now.round_name}</div>
+                    <div className="text-sm text-live">● กำลังแข่ง · {catLabel(now.category_id)} · {now.round_name}</div>
                     <div className="text-2xl font-bold">{vs(now)}</div>
                     <div className="text-5xl font-black text-accent-2">{now.team_a_score} - {now.team_b_score}</div>
                   </div>
                 ) : (
                   <div className="text-2xl text-muted">ว่าง</div>
                 )}
-                <div className="text-lg text-muted">ถัดไป: {vs(next)}</div>
+                <div className="text-lg text-muted">ถัดไป: {next ? `${catLabel(next.category_id)} · ${vs(next)}` : "-"}</div>
               </div>
             );
           })}
@@ -61,6 +63,7 @@ export default async function DisplayPage({ params }: { params: Promise<{ game: 
             {latest.length === 0 && <span className="text-muted">-</span>}
             {latest.map((m) => (
               <span key={m.id} className="mr-6">
+                <span className="text-xs text-muted">{catLabel(m.category_id)} </span>
                 {nameOf(teams, m.team_a_id)} <b className="text-accent">{m.team_a_score}-{m.team_b_score}</b> {nameOf(teams, m.team_b_id)}
               </span>
             ))}
