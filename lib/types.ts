@@ -7,7 +7,7 @@ export type Game = {
   team_size: number;
 };
 
-export type Category = { id: string; game_id: string; name: string };
+export type Category = { id: string; game_id: string; code: string; name: string };
 
 export type Station = { id: string; game_id: string; name: string };
 
@@ -15,6 +15,8 @@ export type Station = { id: string; game_id: string; name: string };
 export type Team = {
   id: string;
   category_id: string;
+  /** รหัส อปท. (T01…) — ทีม อปท. เดียวกันในหลายประเภทใช้รหัสเดียวกัน · (คอลัมน์ขอเพิ่ม บล็อก 10) */
+  team_code?: string;
   name: string;
   short_name?: string;
   logo_url?: string;
@@ -27,6 +29,9 @@ export type Player = {
   real_name?: string;
   in_game_name: string;
   is_captain: boolean;
+  order_in_team?: number;
+  /** คนเดียวกันข้ามประเภท = ชื่อจริง + team_code · ใช้ผูกรูปถ่าย (บล็อก 10) */
+  person_key?: string;
 };
 
 export type MatchStatus = "scheduled" | "ongoing" | "ended" | "certified";

@@ -1,6 +1,6 @@
-# Praksa Esports 2026 — web
+# กระสาเกมส์ 2569 · อีสปอร์ต — web
 
-Next.js (App Router) + TypeScript + Tailwind v4. ตอนนี้ใช้ข้อมูลจำลอง (`lib/data/mock.ts`) — ยังไม่ต่อ Supabase
+Next.js (App Router) + TypeScript + Tailwind v4. ชั้นข้อมูลเป็น interface (`lib/data/source.ts`) · ตอนนี้ใช้ mock ในหน่วยความจำ (`lib/data/mock.ts`) seed จาก `data/roster.seed.txt` (รายชื่อจริง อยู่นอก git — ไม่มีไฟล์จะใช้ seed ทดสอบ · บังคับใช้ seed ทดสอบด้วย `PRAKSA_SEED=test`)
 
 ## รัน
 ```

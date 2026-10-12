@@ -7,7 +7,8 @@ import { EVENTS, matchChannelName, openBus, type HubEventMap, type HudTone } fro
 import { SponsorLogo } from "./SponsorLogo";
 import { Stinger } from "./Stinger";
 
-export const EVENT_TITLE = "Praksa Esports 2026";
+import { EVENT } from "@/lib/event";
+const EVENT_TITLE = EVENT.shortTitle;
 const BAR_ROTATE_MS = 8000;
 const TONE: Record<HudTone, string> = { info: "bg-accent text-black", warn: "bg-amber-400 text-black", alert: "bg-live text-white" };
 

@@ -4,3 +4,6 @@ node_modules
 !.env.example
 *.tsbuildinfo
 next-env.d.ts
+
+# รายชื่อนักกีฬาจริง (ผู้เยาว์) — ห้าม commit/push
+data/roster.seed.txt
