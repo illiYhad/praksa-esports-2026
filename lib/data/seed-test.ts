@@ -46,7 +46,7 @@ export function buildTestStore(): Store {
     const id = (n: number) => `${g.code}-m${n}`;
     const t = (i: number) => `${g.code}-t${i}`;
     const stationFor = (i: number) => `${g.code}-s${(i % STATION_COUNT[g.code]) + 1}`;
-    const base = new Date("2026-10-18T10:00:00+07:00").getTime();
+    const base = new Date("2026-10-19T10:00:00+07:00").getTime();
     const at = (k: number) => new Date(base + k * 45 * 60_000).toISOString();
     const mk = (n: number, round: string, bo: number, extra: Partial<Match>): Match => ({
       id: id(n),

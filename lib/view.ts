@@ -51,9 +51,15 @@ export const clockOf = (iso?: string) =>
 /** วันที่ YYYY-MM-DD ตามเวลาไทย (ใช้จับคู่กับวันแข่ง) */
 export const dayKeyOf = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Bangkok" }) : "");
 
-/** วันที่ภาษาไทยแบบยาว เช่น วันอาทิตย์ที่ 18 ตุลาคม 2569 */
-export const thaiDate = (ymd: string) =>
-  ymd ? new Date(`${ymd}T00:00:00+07:00`).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok", weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "-";
+/** วันที่ภาษาไทยแบบสั้น เช่น "จันทร์ 19 ต.ค. 2569" (พ.ศ.) */
+export function thaiDate(ymd: string): string {
+  if (!ymd) return "-";
+  const d = new Date(`${ymd}T00:00:00+07:00`);
+  const part = (opts: Intl.DateTimeFormatOptions) => d.toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok", ...opts });
+  const weekday = part({ weekday: "long" }).replace(/^วัน/, "");
+  const year = part({ year: "numeric" }).replace(/^พ\.ศ\.\s*/, "");
+  return `${weekday} ${part({ day: "numeric" })} ${part({ month: "short" })} ${year}`;
+}
 
 /** ISO → ค่าช่อง datetime-local ตามเวลาไทย (YYYY-MM-DDTHH:mm) */
 export function toLocalInput(iso?: string): string {

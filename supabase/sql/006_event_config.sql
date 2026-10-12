@@ -24,7 +24,7 @@ CREATE POLICY admin_write ON category_settings FOR ALL TO authenticated
 -- ตั้งค่างาน (แถวเดียว id = 1): วันแข่ง 1–4 · ประกาศหน้าแรก · โลโก้/สีงาน
 CREATE TABLE event_config (
     id INTEGER PRIMARY KEY DEFAULT 1 CHECK (id = 1),
-    days JSONB NOT NULL DEFAULT '[]'::jsonb,                    -- ["2026-10-18", ...]
+    days JSONB NOT NULL DEFAULT '[]'::jsonb,                    -- ["2026-10-19", "2026-10-20", ...]
     announcement TEXT NOT NULL DEFAULT '',
     logo_url TEXT,
     theme JSONB,                                                -- { "accent": "#...", "accent2": "#...", "bg": "#..." }
@@ -35,7 +35,8 @@ CREATE POLICY public_read ON event_config FOR SELECT USING (true);
 CREATE POLICY admin_write ON event_config FOR ALL TO authenticated
   USING (public.current_staff_role() = 'admin') WITH CHECK (public.current_staff_role() = 'admin');
 
-INSERT INTO event_config (id, days) VALUES (1, '["2026-10-18","2026-10-19","2026-10-20","2026-10-21"]'::jsonb)
+-- วันแข่ง 1–4 (พี่หยัดยืนยัน 2026-10-12 14:46): จันทร์ 19 · อังคาร 20 · พุธ 21 · พฤหัส 22 ต.ค. 2569
+INSERT INTO event_config (id, days) VALUES (1, '["2026-10-19","2026-10-20","2026-10-21","2026-10-22"]'::jsonb)
 ON CONFLICT (id) DO NOTHING;
 
 -- (ไม่บังคับ) ให้หน้าแอดมินรับการเปลี่ยนแปลงสด
