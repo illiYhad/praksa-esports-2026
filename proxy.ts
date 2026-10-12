@@ -9,7 +9,14 @@ export async function proxy(request: NextRequest) {
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
   let response = NextResponse.next({ request });
-  if (!url || !key) return response;
+  if (!url || !key) {
+    // production ไม่มี env และไม่ได้ตั้ง ALLOW_MOCK_IN_PRODUCTION=1 → หน้าสตาฟ/การเขียนตอบ 503 (หน้าสาธารณะไม่ผ่าน matcher จึงเปิดได้ปกติ)
+    if (process.env.NODE_ENV === "production" && process.env.ALLOW_MOCK_IN_PRODUCTION !== "1") {
+      const path = request.nextUrl.pathname;
+      if (rolesForPath(path) || (path === "/api/photos" && request.method === "POST")) return blocked(request);
+    }
+    return response;
+  }
 
   const supabase = createServerClient(url, key, {
     cookies: {
@@ -39,6 +46,13 @@ export async function proxy(request: NextRequest) {
   const { data: prof } = await supabase.from("staff_profiles").select("role").eq("id", user.id).maybeSingle();
   if (!prof || !roles.includes(prof.role as StaffRole)) return deny("denied");
   return response;
+}
+
+const BLOCKED_MESSAGE = "ระบบยังไม่ได้ตั้งค่าฐานข้อมูล — ติดต่อผู้ดูแล";
+function blocked(request: NextRequest) {
+  if (request.nextUrl.pathname.startsWith("/api/")) return NextResponse.json({ ok: false, error: BLOCKED_MESSAGE }, { status: 503 });
+  const html = `<!doctype html><html lang="th"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width"><title>ยังไม่ได้ตั้งค่าระบบ</title></head><body style="font-family:system-ui,sans-serif;background:#061537;color:#EEF4FF;display:flex;min-height:100vh;align-items:center;justify-content:center;margin:0"><main style="text-align:center;padding:24px"><h1 style="font-size:22px">${BLOCKED_MESSAGE}</h1><p style="color:#9DB2D6">หน้านี้ต้องใช้ฐานข้อมูลและการล็อกอิน (ยังไม่ได้ใส่ค่า Supabase ใน env ของเซิร์ฟเวอร์)</p><p><a href="/" style="color:#5BC8F2">กลับหน้าแรก</a></p></main></body></html>`;
+  return new NextResponse(html, { status: 503, headers: { "Content-Type": "text/html; charset=utf-8", "Cache-Control": "no-store" } });
 }
 
 export const config = {

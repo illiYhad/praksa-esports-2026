@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { hasSupabaseEnv } from "@/lib/supabase/env";
-import { getStaff, ROLE_LABEL } from "@/lib/auth";
+import { getStaff, mockBlocked, BLOCKED_MESSAGE, ROLE_LABEL } from "@/lib/auth";
 import { LoginForm } from "@/components/auth/LoginForm";
 import { signOutAction } from "@/app/login/actions";
 import { KrasaLogo, Seal } from "@/components/brand/Brand";
@@ -16,6 +16,15 @@ export default async function LoginPage({ searchParams }: { searchParams: Promis
       <Seal size={72} />
     </div>
   );
+  if (mockBlocked) {
+    return (
+      <div className="mx-auto max-w-md space-y-3 rounded bg-surface p-4 text-sm">
+        <Brand />
+        <h1 className="text-lg font-bold text-live">{BLOCKED_MESSAGE}</h1>
+        <p className="text-muted">เซิร์ฟเวอร์นี้ยังไม่ได้ใส่ค่า Supabase ใน env จึงเปิดเฉพาะหน้าสาธารณะ</p>
+      </div>
+    );
+  }
   if (!hasSupabaseEnv) {
     return (
       <div className="mx-auto max-w-md space-y-3 rounded bg-surface p-4 text-sm">

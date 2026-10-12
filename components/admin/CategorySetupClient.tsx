@@ -122,6 +122,7 @@ export function CategorySetupClient({ category, teams, setting, matches, sibling
             <select className={field} disabled={locked} value={form.format} onChange={(e) => setForm({ ...form, format: e.target.value as BracketFormat })}>
               {FORMATS.map((f) => <option key={f} value={f}>{formatLabel[f]}</option>)}
             </select>
+            {form.format === "double" && <span className="text-xs text-muted">ชิงชนะเลิศนัดเดียว (ไม่มีนัดแก้มือ)</span>}
           </label>
           <label className="flex items-center gap-2 text-sm">
             <input type="checkbox" disabled={!hasKo} checked={hasKo && form.third_place} onChange={(e) => setForm({ ...form, third_place: e.target.checked })} />
