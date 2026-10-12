@@ -1,6 +1,6 @@
 import fs from "node:fs";
 import path from "node:path";
-import type { Category, Game, Match, MatchAuditLog, Player, Sponsor, Station, Team } from "@/lib/types";
+import type { Category, CategorySetting, Game, Match, MatchAuditLog, Player, Sponsor, Station, Team } from "@/lib/types";
 import { EVENT, STATION_COUNT } from "@/lib/event";
 import { abbreviateOrg, parseRoster, personKey, type Roster } from "./roster-parse";
 import { buildTestStore } from "./seed-test";
@@ -14,6 +14,7 @@ export type Store = {
   matches: Match[];
   sponsors: Sponsor[];
   audit: MatchAuditLog[];
+  settings: CategorySetting[];
 };
 
 const GAME_META: Record<string, { name: string; format: Game["format"]; team_size: number }> = {
@@ -26,7 +27,7 @@ const GAME_META: Record<string, { name: string; format: Game["format"]; team_siz
 const ROSTER_FILE = path.join(process.cwd(), "data", "roster.seed.txt");
 
 export const emptyStore = (): Store => ({
-  games: [], categories: [], teams: [], players: [], stations: [], matches: [], sponsors: [], audit: [],
+  games: [], categories: [], teams: [], players: [], stations: [], matches: [], sponsors: [], audit: [], settings: [],
 });
 
 /** สร้างข้อมูลหลักจาก ROSTER — ไม่มีแมตช์ (จัดสายในแอดมิน เฟส B) */

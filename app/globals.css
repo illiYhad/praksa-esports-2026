@@ -25,3 +25,15 @@ body {
   color: var(--text);
   font-family: system-ui, "Noto Sans Thai", sans-serif;
 }
+
+@keyframes pop {
+  0% { opacity: 0; transform: scale(0.6); }
+  60% { opacity: 1; transform: scale(1.08); }
+  100% { opacity: 1; transform: scale(1); }
+}
+.animate-pop { animation: pop 0.5s ease-out; }
+
+@media print {
+  header, footer, nav, .no-print { display: none !important; }
+  body { background: #fff; color: #000; }
+}

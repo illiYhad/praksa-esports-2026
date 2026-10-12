@@ -38,11 +38,19 @@ export type MatchStatus = "scheduled" | "ongoing" | "ended" | "certified";
 
 export type GameScore = { a: number; b: number };
 
+/** ส่วนของสาย: winners = สายบน/น็อกเอาต์ · losers = สายล่าง (double) · final = Grand Final (double) · third = ชิงอันดับ 3 · group = แบ่งกลุ่ม/พบกันหมด */
+export type MatchStage = "winners" | "losers" | "final" | "third" | "group";
+
 export type Match = {
   id: string;
   category_id: string;
   station_id?: string;
   round_name: string;
+  /** (คอลัมน์ขอเพิ่ม บล็อก 10) โครงสร้างสาย */
+  stage?: MatchStage;
+  round_no?: number;
+  group_name?: string;
+  sort_order?: number;
   best_of: number;
   status: MatchStatus;
   scheduled_time?: string;
@@ -80,6 +88,27 @@ export type Sponsor = {
   sequence: number;
   logo_url: string;
   is_active: boolean;
+};
+
+export type BracketFormat = "single" | "double" | "round_robin" | "groups";
+export type SeedingMode = "random" | "manual";
+export type SingleEntryResolution = "pending" | "walkover" | "merge" | "cancel";
+
+/** ตั้งค่ารูปแบบแข่งต่อประเภท (ตาราง category_settings · ขอเพิ่ม บล็อก 10) */
+export type CategorySetting = {
+  category_id: string;
+  format: BracketFormat;
+  third_place: boolean;
+  group_count: number;
+  advance_per_group: number;
+  /** BO ต่อรอบ key = round_name · key พิเศษ "group" = รอบแบ่งกลุ่ม/พบกันหมด */
+  best_of_by_round: Record<string, number>;
+  seeding: SeedingMode;
+  /** ลำดับทีม (id) ที่ใช้วางสาย — จากจับสลากหรือเรียงเอง */
+  seed_order: string[];
+  single_entry: SingleEntryResolution;
+  merge_into_category_id?: string;
+  updated_at: string;
 };
 
 export type StaffRole = "admin" | "result_staff" | "stream_operator";

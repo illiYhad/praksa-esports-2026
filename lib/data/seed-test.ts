@@ -6,7 +6,7 @@ import { STATION_COUNT } from "@/lib/event";
 const NOW = () => new Date().toISOString();
 
 export function buildTestStore(): Store {
-  const s: Store = { games: [], categories: [], teams: [], players: [], stations: [], matches: [], sponsors: [], audit: [] };
+  const s: Store = { games: [], categories: [], teams: [], players: [], stations: [], matches: [], sponsors: [], audit: [], settings: [] };
   s.games.push(
     { id: "g-rov", code: "rov", name: "ROV", format: "team", team_size: 5 },
     { id: "g-sf6", code: "sf6", name: "Street Fighter 6", format: "solo", team_size: 1 },

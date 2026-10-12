@@ -1,32 +1,48 @@
 import Link from "next/link";
 import { data } from "@/lib/data";
+import { AdminNav } from "@/components/admin/AdminNav";
+import { formatLabel } from "@/lib/view";
 
 export const dynamic = "force-dynamic";
 
 export default async function AdminPage() {
-  const [games, teams, matches, sponsors, categories] = await Promise.all([
+  const [games, categories, teams, matches, settings, sponsors] = await Promise.all([
     data.getGames(),
+    data.getCategories(),
     data.getTeams(),
     data.getMatches(),
+    data.getCategorySettings(),
     data.getSponsors(),
-    data.getCategories(),
   ]);
-  const inGame = (categoryId: string, gameId: string) => categories.find((c) => c.id === categoryId)?.game_id === gameId;
   return (
     <div className="space-y-4">
-      <h1 className="text-xl font-bold">จัดการ</h1>
-      <div className="flex gap-4 text-accent">
-        <Link href="/admin/result">กรอกผล →</Link>
-        <Link href="/checkin">เช็กอิน →</Link>
-      </div>
-      <ul className="space-y-1 text-sm">
-        {games.map((g) => (
-          <li key={g.id}>
-            {g.name} ({g.format}, {g.team_size}) — ผู้เข้าแข่ง {teams.filter((t) => inGame(t.category_id, g.id)).length} · แมตช์{" "}
-            {matches.filter((m) => inGame(m.category_id, g.id)).length}
-          </li>
-        ))}
-      </ul>
+      <AdminNav />
+      <h1 className="text-xl font-bold">ภาพรวม</h1>
+      {games.map((g) => {
+        const cats = categories.filter((c) => c.game_id === g.id);
+        return (
+          <section key={g.id}>
+            <h2 className="mb-1 font-bold text-accent-2">{g.name}</h2>
+            <ul className="space-y-1 text-sm">
+              {cats.map((c) => {
+                const n = teams.filter((t) => t.category_id === c.id).length;
+                const ms = matches.filter((m) => m.category_id === c.id);
+                const s = settings.find((x) => x.category_id === c.id);
+                return (
+                  <li key={c.id} className="flex flex-wrap items-center gap-2">
+                    <Link href={`/admin/categories/${c.id}`} className="text-accent">{c.name}</Link>
+                    <span className="text-muted">
+                      {n} ทีม · {s ? formatLabel[s.format] : "-"} · แมตช์ {ms.length}
+                      {ms.some((m) => m.status === "ongoing") && <span className="ml-1 text-live">● LIVE</span>}
+                    </span>
+                    {n === 1 && s?.single_entry === "pending" && <span className="rounded bg-amber-500/20 px-1 text-xs text-amber-300">ผู้สมัคร 1 คน</span>}
+                  </li>
+                );
+              })}
+            </ul>
+          </section>
+        );
+      })}
       <h2 className="font-bold text-accent-2">สปอนเซอร์</h2>
       <ul className="text-sm">
         {sponsors.map((s) => (
