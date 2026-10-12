@@ -1,32 +1,32 @@
 "use server";
 
 import { data } from "@/lib/data";
+import { requireRole } from "@/lib/auth";
+import { run, type ActionResult } from "@/lib/actions";
 import type { GameScore, MatchAuditLog } from "@/lib/types";
 
-// ยังไม่มีระบบล็อกอิน (รอ K-S4) — จึงยังไม่ใส่ staff_id ลง reported_by / certified_by / audit
-export type ActionResult = { ok: true } | { ok: false; error: string };
+export type { ActionResult };
 
-async function run(fn: () => Promise<unknown>): Promise<ActionResult> {
-  try {
-    await fn();
-    return { ok: true };
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "เกิดข้อผิดพลาด" };
-  }
-}
+// กรอกผล/รับรอง = admin หรือ result_staff (ตรวจบทบาทฝั่ง server ทุกครั้ง · staff_id ลง reported_by / certified_by / audit ผ่าน engine)
+const staff = <T,>(fn: () => Promise<T>) => run(async () => { await requireRole("admin", "result_staff"); return fn(); });
 
 export async function saveProgressAction(matchId: string, scores: GameScore[]): Promise<ActionResult> {
-  return run(() => data.saveProgress(matchId, scores));
+  return staff(async () => void (await data.saveProgress(matchId, scores)));
 }
 export async function saveResultAction(matchId: string, scores: GameScore[]): Promise<ActionResult> {
-  return run(() => data.saveResult(matchId, scores));
+  return staff(async () => void (await data.saveResult(matchId, scores)));
 }
 export async function certifyAction(matchId: string): Promise<ActionResult> {
-  return run(() => data.certifyMatch(matchId));
+  return staff(async () => void (await data.certifyMatch(matchId)));
 }
 export async function uncertifyAction(matchId: string): Promise<ActionResult> {
-  return run(() => data.uncertifyMatch(matchId));
+  return staff(async () => void (await data.uncertifyMatch(matchId)));
 }
 export async function loadAuditAction(matchId: string): Promise<MatchAuditLog[]> {
-  return data.getAuditLogs(matchId);
+  try {
+    await requireRole("admin", "result_staff");
+    return await data.getAuditLogs(matchId);
+  } catch {
+    return [];
+  }
 }

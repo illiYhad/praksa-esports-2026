@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { EVENT } from "@/lib/event";
+import { UserBadge } from "@/components/auth/UserBadge";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -23,6 +24,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Link href="/admin">แอดมิน</Link>
             <Link href="/stream-hub">ห้องคุม</Link>
           </nav>
+          <UserBadge />
         </header>
         <main className="mx-auto max-w-6xl p-4">{children}</main>
         <footer className="px-4 py-6 text-center text-xs text-muted">

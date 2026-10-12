@@ -17,35 +17,35 @@ const GAME_META: Record<string, { name: string; format: Game["format"]; team_siz
 // ไฟล์รายชื่อจริง (ผู้เยาว์) อยู่นอก git — ไม่มีไฟล์ → ใช้ seed ทดสอบ
 const ROSTER_FILE = path.join(process.cwd(), "data", "roster.seed.txt");
 
-function ensureGame(s: Store, code: string): Game | undefined {
+function ensureGame(s: Store, code: string, newId?: (prefix: string) => string): Game | undefined {
   const found = s.games.find((g) => g.code === code);
   if (found) return found;
   const meta = GAME_META[code];
   if (!meta) return undefined;
-  const game: Game = { id: `g-${code}`, code, ...meta };
+  const game: Game = { id: newId ? newId("g") : `g-${code}`, code, ...meta };
   s.games.push(game);
   for (let k = 1; k <= (STATION_COUNT[code] ?? 1); k++) {
-    s.stations.push({ id: `${code}-s${k}`, game_id: game.id, name: `สถานี ${k}` });
+    s.stations.push({ id: newId ? newId("st") : `${code}-s${k}`, game_id: game.id, name: `สถานี ${k}` });
   }
   return game;
 }
 
-/** รวมรายชื่อจาก ROSTER เข้า store — ซ้ำไม่สร้างซ้ำ · apply=false = พรีวิวอย่างเดียว */
-export function mergeRoster(s: Store, roster: Roster, apply: boolean): ImportPreview {
+/** รวมรายชื่อจาก ROSTER เข้า store — ซ้ำไม่สร้างซ้ำ · apply=false = พรีวิวอย่างเดียว · newId = ตัวสร้าง id (Supabase ต้องเป็น uuid) */
+export function mergeRoster(s: Store, roster: Roster, apply: boolean, newId?: (prefix: string) => string): ImportPreview {
   const out: ImportPreview = { newCategories: [], unknownGames: [], newTeams: 0, existingTeams: 0, newPlayers: 0, existingPlayers: 0, errors: [] };
   const catByCode = new Map(s.categories.map((c) => [c.code, c]));
   const virtualCats = new Map<string, { id: string; game_id: string }>();
 
   for (const c of roster.categories) {
     if (catByCode.has(c.code)) continue;
-    const game = apply ? ensureGame(s, c.game) : s.games.find((g) => g.code === c.game) ?? (GAME_META[c.game] ? { id: `g-${c.game}` } : undefined);
+    const game = apply ? ensureGame(s, c.game, newId) : s.games.find((g) => g.code === c.game) ?? (GAME_META[c.game] ? { id: `g-${c.game}` } : undefined);
     if (!game) {
       if (!out.unknownGames.includes(c.game)) out.unknownGames.push(c.game);
       continue;
     }
     out.newCategories.push(c.code);
     if (apply) {
-      const cat = { id: c.code, code: c.code, game_id: game.id, name: c.name };
+      const cat = { id: newId ? newId("cat") : c.code, code: c.code, game_id: game.id, name: c.name };
       s.categories.push(cat);
       catByCode.set(c.code, cat);
     } else {
@@ -75,7 +75,7 @@ export function mergeRoster(s: Store, roster: Roster, apply: boolean): ImportPre
         newTeamIds.add(teamKey);
         if (apply) {
           const name = orgName.get(p.team_code) ?? s.teams.find((t) => t.team_code === p.team_code)?.name ?? p.team_code;
-          team = { id: `${p.team_code}-${cat.id}`, category_id: cat.id, team_code: p.team_code, name, short_name: abbreviateOrg(name), is_checked_in: false };
+          team = { id: newId ? newId("t") : `${p.team_code}-${cat.id}`, category_id: cat.id, team_code: p.team_code, name, short_name: abbreviateOrg(name), is_checked_in: false };
           s.teams.push(team);
         }
       }
@@ -92,7 +92,7 @@ export function mergeRoster(s: Store, roster: Roster, apply: boolean): ImportPre
         let order = p.order_in_team || 1;
         while (used.has(order)) order++;
         s.players.push({
-          id: `${team.id}-p${order}`,
+          id: newId ? newId("p") : `${team.id}-p${order}`,
           team_id: team.id,
           real_name: p.real_name,
           in_game_name: "",

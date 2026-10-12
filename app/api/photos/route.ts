@@ -1,9 +1,10 @@
 import { data } from "@/lib/data";
+import { requireRole } from "@/lib/auth";
 
 export const dynamic = "force-dynamic";
 
 // รับรูปจากหน้าถ่ายรูป (data URL 2 รูป) — ใช้ route handler แทน server action เพราะไฟล์ใหญ่กว่า 1 MB ได้
-// ยังไม่มีล็อกอิน — เฟส F จะตรวจบทบาท admin / result_staff ที่นี่
+// ตรวจบทบาท admin / result_staff ฝั่ง server (proxy.ts กั้นอีกชั้น)
 type Body = { person_key?: string; original?: string; cutout?: string; consent?: boolean };
 
 function parseDataUrl(s: string | undefined, what: string): { mime: string; bytes: Uint8Array } {
@@ -16,6 +17,7 @@ function parseDataUrl(s: string | undefined, what: string): { mime: string; byte
 
 export async function POST(req: Request) {
   try {
+    await requireRole("admin", "result_staff");
     const body = (await req.json()) as Body;
     if (!body.person_key) throw new Error("ไม่ระบุนักกีฬา");
     const original = parseDataUrl(body.original, "รูปต้นฉบับ");

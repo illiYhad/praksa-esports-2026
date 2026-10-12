@@ -1,12 +1,15 @@
 "use server";
 
 import { data } from "@/lib/data";
+import { requireRole } from "@/lib/auth";
 import { run, type ActionResult } from "@/lib/actions";
 
-// ยังไม่มีระบบล็อกอิน — เฟส F จะตรวจบทบาท admin / result_staff
+// สตาฟถ่ายรูป = admin หรือ result_staff (ตรวจฝั่ง server ทุกครั้ง)
+const staff = <T,>(fn: () => Promise<T>) => run(async () => { await requireRole("admin", "result_staff"); return fn(); });
+
 export async function setPhotoConsentAction(photoId: string, consent: boolean): Promise<ActionResult> {
-  return run(async () => void (await data.setPhotoConsent(photoId, consent)));
+  return staff(async () => void (await data.setPhotoConsent(photoId, consent)));
 }
 export async function deletePhotoAction(photoId: string): Promise<ActionResult> {
-  return run(() => data.deletePhoto(photoId));
+  return staff(() => data.deletePhoto(photoId));
 }
