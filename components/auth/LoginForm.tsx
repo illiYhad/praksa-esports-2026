@@ -4,6 +4,18 @@ import React, { useState } from "react";
 import { useRouter } from "next/navigation";
 import { createBrowserSupabase } from "@/lib/supabase/client";
 
+/** รับเฉพาะ path ภายในเว็บ: แปลงเป็น URL แล้วตรวจ origin (กัน open redirect ทุกรูปแบบ เช่น //evil.com · /\evil.com · อักขระควบคุม) */
+function safeNext(next: string): string {
+  if (!next.startsWith("/") || /[\u0000-\u001f\\]/.test(next)) return "/admin";
+  try {
+    const u = new URL(next, window.location.origin);
+    if (u.origin !== window.location.origin) return "/admin";
+    return u.pathname + u.search + u.hash;
+  } catch {
+    return "/admin";
+  }
+}
+
 export function LoginForm({ next }: { next: string }) {
   const router = useRouter();
   const [email, setEmail] = useState("");
@@ -21,9 +33,7 @@ export function LoginForm({ next }: { next: string }) {
       setError(error.message === "Invalid login credentials" ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : error.message);
       return;
     }
-    // รับเฉพาะ path ภายในเว็บ (กัน open redirect เช่น //evil.com)
-    const safe = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/admin";
-    router.replace(safe);
+    router.replace(safeNext(next));
     router.refresh();
   };
 
