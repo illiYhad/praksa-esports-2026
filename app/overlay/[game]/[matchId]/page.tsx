@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
 import { OverlayStage } from "@/components/studio/OverlayStage";
+import { shortCategoryName } from "@/lib/view";
 
 export const dynamic = "force-dynamic";
 
@@ -21,15 +22,17 @@ export default async function OverlayPage({
 
   const g = (await data.getGames()).find((x) => x.code === game);
   if (!g) notFound();
-  const [matches, teams, players, sponsors, photos] = await Promise.all([
+  const [matches, teams, players, sponsors, photos, categories] = await Promise.all([
     data.getMatches(g.id),
     data.getTeams(g.id),
     data.getPlayers(g.id),
     data.getSponsors(),
     data.getPhotos(),
+    data.getCategories(g.id),
   ]);
   const match = matches.find((x) => x.id === matchId);
   if (!match) notFound();
+  const categoryName = shortCategoryName(categories.find((c) => c.id === match.category_id)?.name ?? "", g.name);
 
   return (
     <>
@@ -38,6 +41,7 @@ export default async function OverlayPage({
         channelKey={expected}
         game={g}
         match={match}
+        categoryName={categoryName}
         matches={matches}
         teams={teams}
         players={players}

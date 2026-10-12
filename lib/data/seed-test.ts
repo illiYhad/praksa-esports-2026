@@ -95,13 +95,12 @@ export function buildTestStore(): Store {
     id: `sp-${key}-${position}`, name, level, position, sequence, logo_url: "", is_active: true,
   });
   s.sponsors.push(
-    sp("main", "สปอนเซอร์ทดสอบ หลัก", "main", "bottom_ticker", 1),
-    sp("main", "สปอนเซอร์ทดสอบ หลัก", "main", "corner"),
-    sp("main", "สปอนเซอร์ทดสอบ หลัก", "main", "stinger"),
-    sp("main", "สปอนเซอร์ทดสอบ หลัก", "main", "full_screen", 1),
-    sp("co", "สปอนเซอร์ทดสอบ ร่วม", "co", "bottom_ticker", 2),
-    sp("co", "สปอนเซอร์ทดสอบ ร่วม", "co", "full_screen", 2),
-    sp("support", "สปอนเซอร์ทดสอบ สนับสนุน", "support", "bottom_ticker", 3),
+    sp("a", "สปอนเซอร์ทดสอบ A", "main", "bottom_ticker", 1),
+    sp("a", "สปอนเซอร์ทดสอบ A", "main", "corner"),
+    sp("a", "สปอนเซอร์ทดสอบ A", "main", "stinger"),
+    sp("a", "สปอนเซอร์ทดสอบ A", "main", "full_screen", 1),
+    sp("b", "สปอนเซอร์ทดสอบ B", "co", "bottom_ticker", 2),
+    sp("b", "สปอนเซอร์ทดสอบ B", "co", "full_screen", 2),
   );
   return s;
 }

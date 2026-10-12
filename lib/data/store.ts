@@ -111,13 +111,7 @@ export function buildFromRoster(roster: Roster): Store {
   const s = emptyStore();
   for (const code of new Set(roster.categories.map((c) => c.game))) ensureGame(s, code);
   mergeRoster(s, roster, true);
-  s.sponsors.push(
-    { id: "sp-main-bottom_ticker", name: EVENT.organizer, level: "main", position: "bottom_ticker", sequence: 1, logo_url: "", is_active: true },
-    { id: "sp-main-full_screen", name: EVENT.organizer, level: "main", position: "full_screen", sequence: 1, logo_url: "", is_active: true },
-    { id: "sp-main-stinger", name: EVENT.organizer, level: "main", position: "stinger", sequence: 1, logo_url: "", is_active: true },
-    { id: "sp-main-corner", name: EVENT.organizer, level: "main", position: "corner", sequence: 1, logo_url: "", is_active: true },
-    { id: "sp-provider-bottom_ticker", name: EVENT.provider, level: "support", position: "bottom_ticker", sequence: 9, logo_url: "", is_active: true },
-  );
+  // ไม่มีสปอนเซอร์ใน seed หลัก (ใบ 1459) — เทศบาลคือผู้จัด ไม่ใช่สปอนเซอร์ · เพิ่มได้ที่ /admin/sponsors
   return s;
 }
 

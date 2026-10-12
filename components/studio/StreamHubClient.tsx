@@ -3,7 +3,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, Zap } from "lucide-react";
 import type { Category, Game, Match, Scene, Team } from "@/lib/types";
-import { EVENTS, matchChannelName, openBus, type BugCorner, type Bus, type HudTone } from "@/lib/realtime";
+import { EVENTS, matchChannelName, openBus, type BugCorner, type Bus, type HudTone, type ScoreBarPosition } from "@/lib/realtime";
+import { defaultBarPosition } from "./OverlayStage";
 import { DEFAULT_HOTKEYS, HOTKEY_ACTIONS, SCENE_ACTIONS, comboFromEvent, useStreamHubHotkeys } from "./hotkeys";
 import { HotkeySettingsModal } from "./HotkeySettingsModal";
 import { NetworkStat } from "./NetworkStat";
@@ -48,6 +49,8 @@ export function StreamHubClient({
   const [score, setScore] = useState({ a_series: 0, b_series: 0, games: [] as { a: number; b: number }[] });
   const [hudText, setHudText] = useState("");
   const [bug, setBug] = useState<BugCorner>("bl");
+  const [barPos, setBarPos] = useState<ScoreBarPosition>("top");
+  const [rosterShow, setRosterShow] = useState(true);
   const [showKeys, setShowKeys] = useState(false);
   const { hotkeys, save } = useStreamHubHotkeys(DEFAULT_HOTKEYS);
   const busRef = useRef<Bus | null>(null);
@@ -57,6 +60,7 @@ export function StreamHubClient({
     if (!match) return;
     setScore({ a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores });
     setScene(match.status === "ongoing" ? "LIVE" : "STARTING");
+    setBarPos(defaultBarPosition(game?.code ?? ""));
     const bus = openBus(matchChannelName(channelKey, match.id));
     busRef.current = bus;
     return () => {
@@ -71,9 +75,20 @@ export function StreamHubClient({
       busRef.current?.send(EVENTS.sceneChange, { scene });
       busRef.current?.send(EVENTS.scoreUpdate, score);
       busRef.current?.send(EVENTS.brandBug, { corner: bug });
+      busRef.current?.send(EVENTS.scoreBar, { position: barPos });
+      busRef.current?.send(EVENTS.rosterShow, { show: rosterShow });
     }, HEARTBEAT_MS);
     return () => clearInterval(t);
-  }, [scene, score, bug]);
+  }, [scene, score, bug, barPos, rosterShow]);
+
+  const setBar = (position: ScoreBarPosition) => {
+    setBarPos(position);
+    busRef.current?.send(EVENTS.scoreBar, { position });
+  };
+  const setRoster = (show: boolean) => {
+    setRosterShow(show);
+    busRef.current?.send(EVENTS.rosterShow, { show });
+  };
 
   const setBugCorner = (corner: BugCorner) => {
     setBug(corner);
@@ -222,6 +237,18 @@ export function StreamHubClient({
         <button className={`${btn} flex w-full items-center justify-center gap-2`} onClick={playStinger}>
           <Zap className="h-4 w-4" /> สติงเกอร์ <span className="text-[10px] text-muted">{hotkeys.stinger}</span>
         </button>
+
+        <div className="space-y-1 rounded bg-surface/60 p-2">
+          <div className="text-xs text-accent-2">แถบคะแนน (ฉาก LIVE) — ROV บน · SF6/eFootball ล่าง</div>
+          <div className="flex gap-1">
+            {(["top", "bottom"] as ScoreBarPosition[]).map((p) => (
+              <button key={p} className={`${btn} ${barPos === p ? "ring-2 ring-accent" : ""}`} onClick={() => setBar(p)}>{p === "top" ? "บน" : "ล่าง"}</button>
+            ))}
+          </div>
+          <label className="flex items-center gap-2 pt-1 text-xs">
+            <input type="checkbox" checked={rosterShow} onChange={(e) => setRoster(e.target.checked)} /> แสดงรายชื่อ (เฉพาะฉาก STARTING)
+          </label>
+        </div>
 
         <div className="space-y-1 rounded bg-surface/60 p-2">
           <div className="text-xs text-accent-2">ตรามุมจอ (ฉาก LIVE) — หลบ UI ของเกม</div>

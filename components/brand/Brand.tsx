@@ -47,11 +47,11 @@ export function Seal({ size, className = "", priority }: { size: number; classNa
 }
 
 /** ตรา + เส้นคั่น + KRASA ขาว ในกล่องโปร่ง (มุมจอ overlay) · sm = ตรา 64 + โลโก้ 130 · md = ตรา 96 + โลโก้ 200 */
-export function OfficialBug({ size = "sm", className = "" }: { size?: "sm" | "md"; className?: string }) {
+export function OfficialBug({ size = "sm", className = "", style }: { size?: "sm" | "md"; className?: string; style?: React.CSSProperties }) {
   const seal = size === "sm" ? 64 : 96;
   const logo = size === "sm" ? 130 : 200;
   return (
-    <div className={`flex items-center gap-4 rounded-xl bg-bg/70 px-4 py-2 ${className}`}>
+    <div className={`flex items-center gap-4 rounded-xl bg-bg/70 px-4 py-2 ${className}`} style={style}>
       <Seal size={seal} />
       <div className="h-12 w-px bg-white/30" />
       <KrasaLogo variant="white" width={logo} />

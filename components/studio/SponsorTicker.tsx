@@ -16,7 +16,7 @@ export function SponsorTicker({ sponsors }: { sponsors: Sponsor[] }) {
   if (!s) return null;
   return (
     <div className="flex items-center gap-3 text-2xl text-muted">
-      <span className="text-sm uppercase tracking-widest">Sponsored by</span>
+      <span className="text-sm">สนับสนุนโดย</span>
       <SponsorLogo sponsor={s} className="h-10" />
     </div>
   );
