@@ -1,6 +1,7 @@
 import type { Store } from "./defaults";
 import { mergeRoster } from "./store";
 import { abbreviateOrg, parseRoster, personKey } from "./roster-parse";
+import { planQueue } from "./queue";
 import type { PlayerInput, SchedulePatch, TeamInput } from "./source";
 import { photoIdFor } from "@/lib/people";
 import { checkFinished, checkProgress, seriesFromGames, usesGoalsDirect } from "@/lib/match-logic";
@@ -507,20 +508,9 @@ export class Engine {
 
   autoQueue(gameId: string) {
     const game = must(this.s.games.find((g) => g.id === gameId), "เกม");
-    const catIds = new Set(this.s.categories.filter((c) => c.game_id === game.id).map((c) => c.id));
-    const gameMatches = this.s.matches.filter((m) => catIds.has(m.category_id));
-    const busy = new Set(gameMatches.filter((m) => m.station_id && (m.status === "ongoing" || m.status === "scheduled")).map((m) => m.station_id));
-    const free = this.s.stations.filter((st) => st.game_id === game.id && !busy.has(st.id));
-    const ready = gameMatches
-      .filter((m) => m.status === "scheduled" && m.team_a_id && m.team_b_id && !m.station_id)
-      .sort((a, b) => (a.round_no ?? 0) - (b.round_no ?? 0) || a.category_id.localeCompare(b.category_id) || (a.sort_order ?? 0) - (b.sort_order ?? 0));
-    const assigned: Match[] = [];
-    for (let i = 0; i < Math.min(free.length, ready.length); i++) {
-      ready[i].station_id = free[i].id;
-      if (!ready[i].scheduled_time) ready[i].scheduled_time = this.ctx.now();
-      assigned.push(this.touch(ready[i]));
-    }
-    return assigned;
+    // ข้ามแมตช์ที่มีนักกีฬาซ้ำกับแมตช์ที่กำลังแข่ง/ลงสถานีแล้ว (lib/data/queue.ts)
+    const { assigned } = planQueue(this.s, this.s.stations, game.id, this.ctx.now());
+    return assigned.map((m) => this.touch(m));
   }
 
   // ---------- สปอนเซอร์ ----------
