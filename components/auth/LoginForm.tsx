@@ -21,7 +21,9 @@ export function LoginForm({ next }: { next: string }) {
       setError(error.message === "Invalid login credentials" ? "อีเมลหรือรหัสผ่านไม่ถูกต้อง" : error.message);
       return;
     }
-    router.replace(next.startsWith("/") ? next : "/admin");
+    // รับเฉพาะ path ภายในเว็บ (กัน open redirect เช่น //evil.com)
+    const safe = next.startsWith("/") && !next.startsWith("//") && !next.startsWith("/\\") ? next : "/admin";
+    router.replace(safe);
     router.refresh();
   };
 

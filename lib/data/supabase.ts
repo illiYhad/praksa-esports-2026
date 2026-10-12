@@ -7,6 +7,7 @@ import { Engine, type Changes, type Ctx } from "./engine";
 import { getStaff } from "@/lib/auth";
 import { photoIdFor } from "@/lib/people";
 import { createServerSupabase } from "@/lib/supabase/server";
+import { createServiceSupabase } from "@/lib/supabase/service";
 import { PHOTO_BUCKET } from "@/lib/supabase/env";
 import { DEFAULT_SETTING } from "@/lib/bracket/generate";
 import type { AthletePhoto, Category, CategorySetting, EventConfig, Game, Match, MatchAuditLog, Player, Sponsor, Station, Team } from "@/lib/types";
@@ -212,11 +213,12 @@ export const supabaseSource: DataSource = {
     const up = async (path: string, bytes: Uint8Array, contentType: string) => {
       const { error } = await bucket.upload(path, bytes, { contentType, upsert: true });
       if (error) throw new Error(`อัปโหลดรูปไม่สำเร็จ: ${error.message}`);
-      return `${bucket.getPublicUrl(path).data.publicUrl}?v=${Date.now().toString(36)}`;
     };
-    const original_url = await up(`${id}/original.${ext}`, upload.original, upload.originalMime || "image/jpeg");
-    const cutout_url = await up(`${id}/cutout.png`, upload.cutout, "image/png");
-    return withEngine((e) => e.savePhotoRow(personKey, { original_url, cutout_url }, upload.consent));
+    await up(`${id}/original.${ext}`, upload.original, upload.originalMime || "image/jpeg");
+    await up(`${id}/cutout.png`, upload.cutout, "image/png");
+    // bucket เป็น private → เว็บเสิร์ฟผ่าน /api/photos/… ซึ่งตรวจ consent ก่อนแล้ว redirect ไป signed URL
+    const v = Date.now().toString(36);
+    return withEngine((e) => e.savePhotoRow(personKey, { original_url: `/api/photos/${id}/original?v=${v}`, cutout_url: `/api/photos/${id}/cutout?v=${v}` }, upload.consent));
   },
   setPhotoConsent: (id, consent) => withEngine((e) => e.setPhotoConsent(id, consent)),
   async deletePhoto(photoId) {
@@ -228,7 +230,18 @@ export const supabaseSource: DataSource = {
   async getPhotoFile(photoId, kind) {
     const p = (await loadStore()).photos.find((x) => x.id === photoId);
     if (!p) return null;
-    return { redirect: kind === "original" ? p.original_url : p.cutout_url };
+    // ต้องใช้ service role (ฝั่ง server เท่านั้น) เซ็น URL ชั่วคราว 1 ชม. — route เป็นคนตรวจ consent/สิทธิ์ก่อนเรียกมาถึงนี่
+    const admin = createServiceSupabase();
+    if (!admin) {
+      console.warn("[praksa] ไม่มี SUPABASE_SERVICE_ROLE_KEY — เสิร์ฟรูปไม่ได้");
+      return null;
+    }
+    const { data: files } = await admin.storage.from(PHOTO_BUCKET).list(photoId);
+    const name = files?.find((f: { name: string }) => f.name.startsWith(kind === "original" ? "original." : "cutout."))?.name;
+    if (!name) return null;
+    const { data: signed, error } = await admin.storage.from(PHOTO_BUCKET).createSignedUrl(`${photoId}/${name}`, 3600);
+    if (error || !signed) return null;
+    return { redirect: signed.signedUrl };
   },
 
   subscribe: subscribeDataChanges,

@@ -15,7 +15,7 @@
 ## หลังรันครบ
 1. **Authentication → Providers → Email:** ปิด "Allow new users to sign up" (บัญชีสตาฟพี่หยัดสร้างเองใน Authentication → Users)
 2. สร้างบัญชีสตาฟ แล้วเพิ่มแถวใน `staff_profiles` (`id` = uuid ของ user · `email` · `role` = `admin` / `result_staff` / `stream_operator`)
-3. ใส่ค่าใน `.env.local` ของเว็บ (ชื่อตัวแปรดู `.env.example`): `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `CHANNEL_KEY` → เว็บจะสลับจาก mock เป็น Supabase อัตโนมัติ
+3. ใส่ค่าใน `.env.local` ของเว็บ (ชื่อตัวแปรดู `.env.example`): `NEXT_PUBLIC_SUPABASE_URL` · `NEXT_PUBLIC_SUPABASE_ANON_KEY` · `CHANNEL_KEY` · `SUPABASE_SERVICE_ROLE_KEY` (ใช้เฉพาะเซ็น URL รูปใน bucket private) → เว็บจะสลับจาก mock เป็น Supabase อัตโนมัติ
 4. นำเข้ารายชื่อ: ล็อกอิน admin → `/admin/import` วางข้อความไฟล์ ROSTER (ต้องสร้าง `games` 3 แถวก่อน: ดู `007_seed_games.sql`)
 5. ตรวจว่าตาราง `matches` อยู่ใน Realtime: Database → Replication → `supabase_realtime`
 

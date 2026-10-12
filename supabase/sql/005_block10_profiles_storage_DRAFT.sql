@@ -41,19 +41,23 @@ CREATE TABLE athlete_photos (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 ALTER TABLE athlete_photos ENABLE ROW LEVEL SECURITY;
--- หน้าสาธารณะอ่านได้ (โค้ดกรอง consent = true เองก่อนแสดง) · สตาฟถ่ายรูป (admin / result_staff) เขียนได้
-CREATE POLICY public_read ON athlete_photos FOR SELECT USING (true);
+-- สาธารณะอ่านได้เฉพาะแถวที่ยินยอมแล้ว (ชั้น DB ไม่พึ่งโค้ดอย่างเดียว) · สตาฟถ่ายรูป (admin / result_staff) อ่าน/เขียนได้ทุกแถว
+CREATE POLICY public_read_consented ON athlete_photos FOR SELECT USING (consent = true);
+CREATE POLICY photo_staff_read ON athlete_photos FOR SELECT TO authenticated
+  USING (public.current_staff_role() IN ('admin','result_staff'));
 CREATE POLICY photo_staff_write ON athlete_photos FOR ALL TO authenticated
   USING (public.current_staff_role() IN ('admin','result_staff'))
   WITH CHECK (public.current_staff_role() IN ('admin','result_staff'));
 
--- 10.6 Storage bucket สำหรับรูป (อ่านสาธารณะ · เขียนเฉพาะสตาฟ) · path = <photo id>/original.jpg และ <photo id>/cutout.png
+-- 10.6 Storage bucket สำหรับรูป — **private** (ไม่เปิดอ่านสาธารณะ เพราะมีรูปที่ยังไม่ยินยอม)
+-- เว็บเสิร์ฟผ่าน /api/photos/<id>/<kind> ซึ่งตรวจ consent/สิทธิ์ แล้ว redirect ไป signed URL (ฝั่ง server ใช้ SUPABASE_SERVICE_ROLE_KEY)
+-- path = <photo id>/original.jpg และ <photo id>/cutout.png
 INSERT INTO storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
-VALUES ('athlete-photos', 'athlete-photos', true, 6291456, ARRAY['image/jpeg','image/png','image/webp'])
+VALUES ('athlete-photos', 'athlete-photos', false, 6291456, ARRAY['image/jpeg','image/png','image/webp'])
 ON CONFLICT (id) DO NOTHING;
 
-CREATE POLICY athlete_photos_public_read ON storage.objects FOR SELECT
-  USING (bucket_id = 'athlete-photos');
+CREATE POLICY athlete_photos_staff_read ON storage.objects FOR SELECT TO authenticated
+  USING (bucket_id = 'athlete-photos' AND public.current_staff_role() IN ('admin','result_staff'));
 CREATE POLICY athlete_photos_staff_insert ON storage.objects FOR INSERT TO authenticated
   WITH CHECK (bucket_id = 'athlete-photos' AND public.current_staff_role() IN ('admin','result_staff'));
 CREATE POLICY athlete_photos_staff_update ON storage.objects FOR UPDATE TO authenticated
