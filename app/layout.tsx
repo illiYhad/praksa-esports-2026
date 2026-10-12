@@ -1,13 +1,18 @@
 import type { Metadata } from "next";
-import Link from "next/link";
 import { EVENT } from "@/lib/event";
 import { data } from "@/lib/data";
-import { UserBadge } from "@/components/auth/UserBadge";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
 import "./globals.css";
 
+const description = `${EVENT.titleLine1} ${EVENT.titleLine2} · กีฬาอีสปอร์ต · จัดโดย ${EVENT.organizer}`;
+
 export const metadata: Metadata = {
-  title: EVENT.shortTitle,
-  description: `${EVENT.titleLine1} ${EVENT.titleLine2} · ${EVENT.organizer}`,
+  title: { default: EVENT.shortTitle, template: `%s · ${EVENT.shortTitle}` },
+  description,
+  // รูปแชร์ใช้ app/opengraph-image.png อัตโนมัติ (ระบบไฟล์ metadata ของ Next)
+  openGraph: { title: EVENT.shortTitle, description, siteName: EVENT.shortTitle, locale: "th_TH", type: "website" },
+  twitter: { card: "summary_large_image", title: EVENT.shortTitle, description },
 };
 
 /** สีจากตั้งค่างาน (ถ้าตั้ง) ทับค่าตั้งต้นใน globals.css */
@@ -25,26 +30,9 @@ export default async function RootLayout({ children }: { children: React.ReactNo
     <html lang="th">
       <body className="min-h-screen">
         {css && <style>{css}</style>}
-        <header className="flex flex-wrap items-center gap-x-6 gap-y-2 border-b border-white/10 bg-surface px-4 py-3">
-          <Link href="/" className="flex items-center gap-2 font-bold text-accent">
-            {config.logo_url && /* eslint-disable-next-line @next/next/no-img-element */ <img src={config.logo_url} alt="" className="h-8 w-auto" />}
-            {EVENT.shortTitle}
-          </Link>
-          <nav className="flex flex-wrap gap-4 text-sm text-muted">
-            <Link href="/bracket/rov">สาย</Link>
-            <Link href="/athletes">นักกีฬา</Link>
-            <Link href="/teams">ทีม</Link>
-            <Link href="/display/rov">บอร์ดสถานี</Link>
-            <Link href="/checkin">เช็กอิน</Link>
-            <Link href="/admin">แอดมิน</Link>
-            <Link href="/stream-hub">ห้องคุม</Link>
-          </nav>
-          <UserBadge />
-        </header>
+        <SiteHeader logoSrc={config.logo_url || undefined} />
         <main className="mx-auto max-w-6xl p-4">{children}</main>
-        <footer className="px-4 py-6 text-center text-xs text-muted">
-          จัดโดย {EVENT.organizer} · ระบบโดย {EVENT.provider}
-        </footer>
+        <SiteFooter />
       </body>
     </html>
   );

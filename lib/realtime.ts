@@ -10,9 +10,13 @@ export const EVENTS = {
   hudNotificationClear: "hud_notification_clear",
   scoreUpdate: "score_update",
   stingerPlay: "stinger_play",
+  /** มุมของตราทางการ (OfficialBug) บนฉาก LIVE — คนคุมจอหลบ UI ของเกมได้ */
+  brandBug: "brand_bug",
 } as const;
 
 export type HudTone = "info" | "warn" | "alert";
+/** tl = ซ้ายบน · tr = ขวาบน · bl = ซ้ายล่าง (ค่าเริ่มต้น) · br = ขวาล่าง · hidden = ซ่อน */
+export type BugCorner = "tl" | "tr" | "bl" | "br" | "hidden";
 
 export type HubEventMap = {
   scene_change: { scene: Scene };
@@ -20,6 +24,7 @@ export type HubEventMap = {
   hud_notification: { text: string; tone: HudTone };
   hud_notification_clear: Record<string, never>;
   stinger_play: { then_scene?: Scene };
+  brand_bug: { corner: BugCorner };
 };
 export type HubEventName = keyof HubEventMap;
 

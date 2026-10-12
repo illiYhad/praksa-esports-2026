@@ -115,6 +115,7 @@ export function buildFromRoster(roster: Roster): Store {
     { id: "sp-main-bottom_ticker", name: EVENT.organizer, level: "main", position: "bottom_ticker", sequence: 1, logo_url: "", is_active: true },
     { id: "sp-main-full_screen", name: EVENT.organizer, level: "main", position: "full_screen", sequence: 1, logo_url: "", is_active: true },
     { id: "sp-main-stinger", name: EVENT.organizer, level: "main", position: "stinger", sequence: 1, logo_url: "", is_active: true },
+    { id: "sp-main-corner", name: EVENT.organizer, level: "main", position: "corner", sequence: 1, logo_url: "", is_active: true },
     { id: "sp-provider-bottom_ticker", name: EVENT.provider, level: "support", position: "bottom_ticker", sequence: 9, logo_url: "", is_active: true },
   );
   return s;

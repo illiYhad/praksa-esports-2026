@@ -6,7 +6,7 @@ export default function PrintLayout({ children }: { children: React.ReactNode })
   return (
     <>
       <style>{`
-        header, footer { display: none !important; }
+        body > header, body > footer { display: none !important; }
         main { max-width: none !important; padding: 0 !important; margin: 0 !important; }
         body { background: #e5e7eb; }
         @page { size: A4; margin: 12mm; }

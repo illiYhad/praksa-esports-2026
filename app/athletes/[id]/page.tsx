@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
 import { Avatar } from "@/components/profile/Avatar";
+import { KrasaMark, Seal } from "@/components/brand/Brand";
 import { athleteName, personKeyOf, publicPhoto, secondaryName } from "@/lib/people";
 import { MEDAL_ICON, MEDAL_LABEL, medalsForTeam, sumRecords, teamHistory, teamRecord } from "@/lib/stats";
 import { shortCategoryName, statusLabel } from "@/lib/view";
@@ -38,8 +39,10 @@ export default async function AthletePage({ params }: { params: Promise<{ id: st
   return (
     <div className="space-y-6">
       <Link href="/athletes" className="text-xs text-muted">← นักกีฬาทั้งหมด</Link>
-      <section className="flex flex-col gap-6 sm:flex-row">
-        <Avatar src={photo?.cutout_url} name={primary.real_name ?? name} size="xl" className="mx-auto sm:mx-0" />
+      <section className="relative flex flex-col gap-6 overflow-hidden rounded-xl bg-surface/40 p-4 sm:flex-row">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center opacity-[.08]" aria-hidden><KrasaMark variant="white" size={320} /></div>
+        <div className="absolute right-3 top-3"><Seal size={40} /></div>
+        <Avatar src={photo?.cutout_url} name={primary.real_name ?? name} size="xl" className="mx-auto sm:mx-0" mark={20} />
         <div className="min-w-0 flex-1 space-y-2">
           <h1 className="text-4xl font-black">{name}</h1>
           {sub && <div className="text-lg text-muted">{sub}</div>}

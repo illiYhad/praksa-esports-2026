@@ -2,6 +2,7 @@ import Link from "next/link";
 import { data } from "@/lib/data";
 import { EVENT } from "@/lib/event";
 import { medalTable } from "@/lib/medals";
+import { KrasaLogo, Seal, Watermark } from "@/components/brand/Brand";
 import { clockOf, dayKeyOf, nameOf, shortCategoryName, statusLabel, thaiDate } from "@/lib/view";
 
 // หน้าสาธารณะ: ไม่ subscribe Realtime — ใช้ revalidate แทน (โควตาการเชื่อมต่อ Supabase)
@@ -35,9 +36,16 @@ export default async function Home() {
 
   return (
     <div className="space-y-8">
-      <section className="space-y-2 rounded-xl bg-surface p-5">
-        <div className="text-sm text-muted">{EVENT.titleLine1}</div>
-        <h1 className="text-3xl font-black text-accent">{EVENT.titleLine2}</h1>
+      <section className="relative space-y-2 overflow-hidden rounded-xl bg-surface p-5">
+        <Watermark height={420} opacity={0.05} />
+        <div className="relative flex flex-wrap items-center gap-6">
+          <span className="hidden sm:block"><KrasaLogo variant="white" width={420} priority /></span>
+          <span className="sm:hidden"><KrasaLogo variant="white" width={260} priority /></span>
+          <span className="hidden sm:block"><Seal size={120} priority /></span>
+          <span className="sm:hidden"><Seal size={80} priority /></span>
+        </div>
+        <div className="relative text-sm text-muted">{EVENT.titleLine1}</div>
+        <h1 className="relative text-3xl font-black text-accent">{EVENT.titleLine2}</h1>
         <div className="text-sm text-muted">กีฬาอีสปอร์ต · จัดโดย {EVENT.organizer} · {config.days.length ? `${thaiDate(config.days[0])}${config.days.length > 1 ? ` – ${thaiDate(config.days[config.days.length - 1])}` : ""}` : ""}</div>
         {config.announcement && <div className="rounded bg-accent-2/15 p-3 text-sm text-text whitespace-pre-line">📢 {config.announcement}</div>}
         <div className="flex flex-wrap gap-2 pt-1 text-sm">

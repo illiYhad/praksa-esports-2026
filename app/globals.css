@@ -1,13 +1,17 @@
 @import "tailwindcss";
 
+/* ธีมสีตั้งต้นตามโลโก้ KRASA GAMES 2026 (ใบ 1418 ข้อ 2) — เปลี่ยนได้จากตั้งค่างาน */
 :root {
-  --bg: #0b0d12;
-  --surface: #151923;
-  --text: #e8ebf2;
-  --muted: #8b93a7;
-  --accent: #38bdf8;
-  --accent-2: #a78bfa;
-  --live: #ef4444;
+  --bg: #061537;
+  --surface: #0C2152;
+  --text: #EEF4FF;
+  --muted: #9DB2D6;
+  --accent: #5BC8F2;
+  --accent-2: #F2B33D; /* สีทองเหรียญ: vs / ผู้ชนะ / เหรียญ */
+  --live: #EF4444;
+  --brand-navy: #0A2465;
+  --brand-blue: #0F55B8;
+  --brand-cyan: #9FE3FB;
 }
 
 @theme inline {
@@ -18,12 +22,20 @@
   --color-accent: var(--accent);
   --color-accent-2: var(--accent-2);
   --color-live: var(--live);
+  --color-brand-navy: var(--brand-navy);
+  --color-brand-blue: var(--brand-blue);
+  --color-brand-cyan: var(--brand-cyan);
 }
 
 body {
   background: var(--bg);
   color: var(--text);
   font-family: system-ui, "Noto Sans Thai", sans-serif;
+}
+
+/* พื้นงาน (ไล่สี navy → blue) ใช้กับรูปนักกีฬา/พรีวิวตัดพื้น */
+.brand-bg {
+  background: linear-gradient(160deg, var(--brand-navy) 0%, var(--brand-blue) 100%);
 }
 
 @keyframes pop {
@@ -34,6 +46,6 @@ body {
 .animate-pop { animation: pop 0.5s ease-out; }
 
 @media print {
-  header, footer, nav, .no-print { display: none !important; }
+  body > header, body > footer, nav, .no-print { display: none !important; }
   body { background: #fff; color: #000; }
 }

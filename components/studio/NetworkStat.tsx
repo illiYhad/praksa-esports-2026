@@ -15,7 +15,7 @@ async function timedFetch(kb: number): Promise<number> {
   return performance.now() - t0;
 }
 
-// ยกจาก Zodiac: Ping + ความเร็วดาวน์โหลด (kbps) จากเครื่องคนคุมถึงเซิร์ฟเวอร์ — หยุดวัดตอนสลับไปแท็บอื่น
+// ยกจาก Stream Hub เดิม: Ping + ความเร็วดาวน์โหลด (kbps) จากเครื่องคนคุมถึงเซิร์ฟเวอร์ — หยุดวัดตอนสลับไปแท็บอื่น
 export function NetworkStat() {
   const [pingMs, setPingMs] = useState<number | null>(null);
   const [kbps, setKbps] = useState<number | null>(null);

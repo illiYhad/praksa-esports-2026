@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import type { Scene } from "@/lib/types";
 
-// ยกจาก Stream Hub ของ Zodiac: ตัดการเก็บใน Supabase auth ออก — เก็บในเบราว์เซอร์เครื่องนั้นอย่างเดียว (บัญชีสตาฟมาใน K-S3)
+// ยกจาก Stream Hub เดิม: ตัดการเก็บใน Supabase auth ออก — เก็บในเบราว์เซอร์เครื่องนั้นอย่างเดียว (บัญชีสตาฟมาใน K-S3)
 export type HotkeyMap = Record<string, string>;
 
 export interface HotkeyAction {

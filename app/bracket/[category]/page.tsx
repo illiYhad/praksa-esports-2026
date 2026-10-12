@@ -5,6 +5,7 @@ import { BracketView } from "@/components/bracket/BracketView";
 import { computeMedals } from "@/lib/bracket/standings";
 import { DEFAULT_SETTING } from "@/lib/bracket/generate";
 import { formatLabel, shortCategoryName, singleEntryLabel } from "@/lib/view";
+import { Watermark } from "@/components/brand/Brand";
 
 // หน้าสาธารณะ: ไม่ subscribe Realtime — revalidate แทน
 export const revalidate = 20;
@@ -52,8 +53,9 @@ export default async function BracketPage({ params }: { params: Promise<{ catego
   const siblings = categories.filter((c) => c.game_id === g.id);
 
   return (
-    <div className="space-y-4">
-      <Link href={`/bracket/${g.code}`} className="text-xs text-muted">← ประเภทอื่นของ {g.name}</Link>
+    <div className="relative space-y-4 overflow-hidden">
+      <Watermark height={520} opacity={0.04} />
+      <Link href={`/bracket/${g.code}`} className="relative text-xs text-muted">← ประเภทอื่นของ {g.name}</Link>
       <h1 className="text-xl font-bold">{category.name}</h1>
       <p className="text-sm text-muted">{formatLabel[setting.format]}{setting.third_place ? " · มีชิงอันดับ 3" : ""} · {ts.length} ทีม/คน · {ms.length} แมตช์</p>
       {setting.single_entry !== "pending" && <p className="text-sm text-muted">{singleEntryLabel[setting.single_entry]}</p>}

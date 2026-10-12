@@ -6,13 +6,15 @@ import type { AthletePhoto } from "@/lib/types";
 import { DEFAULT_CHROMA, chromaKey, fitCanvas, type ChromaOptions } from "@/lib/chroma";
 import { notifyDataChanged } from "@/lib/data/live";
 import { ConfirmButton, btn } from "@/components/ui/ConfirmButton";
+import { KrasaMark } from "@/components/brand/Brand";
 import { MsgLine, useAct } from "@/components/ui/useAct";
 import { deletePhotoAction, setPhotoConsentAction } from "@/app/admin/photos/actions";
 
 type PersonRow = { key: string; name: string; ign: string; teams: string; categories: string };
 const PREVIEW_MAX = 1000;
 const ORIGINAL_MAX = 1600;
-const BRAND_BG = "linear-gradient(160deg, var(--accent) 0%, var(--accent-2) 100%)";
+// พื้นพรีวิว = พื้นงานจริง (navy→blue + ลายน้ำนก) ตรงกับ Avatar บนเว็บ
+const BRAND_BG = "linear-gradient(160deg, var(--brand-navy) 0%, var(--brand-blue) 100%)";
 
 async function loadImage(file: File): Promise<CanvasImageSource & { width: number; height: number }> {
   try {
@@ -185,9 +187,10 @@ export function PhotoStudioClient({ persons, photos }: { persons: PersonRow[]; p
                 </div>
                 <div>
                   <div className="mb-1 text-xs text-muted">ตัดพื้นแล้ว (พรีวิวบนพื้นสีงาน)</div>
-                  <div className="aspect-[3/4] w-full overflow-hidden rounded" style={{ background: BRAND_BG }}>
+                  <div className="relative aspect-[3/4] w-full overflow-hidden rounded" style={{ background: BRAND_BG }}>
+                    <div className="pointer-events-none absolute -right-[10%] -top-[8%] opacity-10" aria-hidden><KrasaMark variant="white" size={320} /></div>
                     {/* eslint-disable-next-line @next/next/no-img-element */}
-                    {preview && <img src={preview} alt="" className="h-full w-full object-contain object-bottom" />}
+                    {preview && <img src={preview} alt="" className="relative h-full w-full object-contain object-bottom" />}
                   </div>
                 </div>
                 <div className="space-y-1 md:col-span-2">

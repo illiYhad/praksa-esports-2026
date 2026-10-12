@@ -2,6 +2,7 @@ import { data } from "@/lib/data";
 import { AthletesBrowser, type AthleteItem } from "@/components/profile/AthletesBrowser";
 import { groupPersons, publicPhoto } from "@/lib/people";
 import { shortCategoryName } from "@/lib/view";
+import { Watermark } from "@/components/brand/Brand";
 
 export const revalidate = 30;
 
@@ -28,9 +29,10 @@ export default async function AthletesPage() {
     };
   });
   return (
-    <div className="space-y-4">
-      <h1 className="text-xl font-bold">นักกีฬา</h1>
-      <AthletesBrowser items={items} games={games} categories={categories} teams={teams} />
+    <div className="relative space-y-4 overflow-hidden">
+      <Watermark height={520} opacity={0.04} />
+      <h1 className="relative text-xl font-bold">นักกีฬา</h1>
+      <div className="relative"><AthletesBrowser items={items} games={games} categories={categories} teams={teams} /></div>
     </div>
   );
 }

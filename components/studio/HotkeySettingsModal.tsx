@@ -4,7 +4,7 @@ import React, { useEffect, useState } from "react";
 import { Keyboard, X, RotateCcw } from "lucide-react";
 import { comboFromEvent, type HotkeyAction, type HotkeyMap } from "./hotkeys";
 
-// ยกจาก Zodiac: คลิกช่องของคำสั่งไหน แล้วกดปุ่มที่ต้องการ (ต้องมี Alt/Ctrl/Shift ร่วม ยกเว้น F1-F12)
+// ยกจาก Stream Hub เดิม: คลิกช่องของคำสั่งไหน แล้วกดปุ่มที่ต้องการ (ต้องมี Alt/Ctrl/Shift ร่วม ยกเว้น F1-F12)
 export function HotkeySettingsModal({
   actions,
   hotkeys,

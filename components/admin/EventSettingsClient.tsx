@@ -34,7 +34,7 @@ export function EventSettingsClient({ config }: { config: EventConfig }) {
       </section>
       <section className="space-y-2 rounded bg-surface/60 p-3">
         <h2 className="font-bold text-accent-2">โลโก้ / สีงาน</h2>
-        <label className="flex flex-col text-xs text-muted">URL โลโก้งาน (ยังไม่มีโลโก้เทศบาล — เว้นว่างได้)<input className={field} value={logo} onChange={(e) => setLogo(e.target.value)} /></label>
+        <label className="flex flex-col text-xs text-muted">URL โลโก้หัวเว็บ (ว่าง = ค่าตั้งต้น /brand/krasa-games-2026_white.svg)<input className={field} placeholder="/brand/krasa-games-2026_white.svg" value={logo} onChange={(e) => setLogo(e.target.value)} /></label>
         <div className="grid gap-2 sm:grid-cols-3">
           {(["accent", "accent2", "bg"] as const).map((k) => (
             <label key={k} className="flex flex-col text-xs text-muted">

@@ -51,7 +51,7 @@ export default async function ResultSheetPage({ params }: { params: Promise<{ ma
       <table className="mb-3 w-full text-[10pt]">
         <tbody>
           <tr>
-            <td className={cell}><b>รอบ</b> {match.round_name}</td>
+            <td className={cell}><b>{match.round_name}</b>{match.group_name ? ` (${match.group_name})` : ""}</td>
             <td className={cell}><b>รูปแบบ</b> BO{match.best_of}</td>
             <td className={cell}><b>สถานี</b> {station?.name ?? "________"}</td>
             <td className={cell}><b>เวลา</b> {match.scheduled_time ? timeOf(match.scheduled_time) : "____/____/______ ____:____"}</td>

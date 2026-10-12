@@ -2,6 +2,7 @@ import Link from "next/link";
 import { data } from "@/lib/data";
 import { shortCategoryName } from "@/lib/view";
 import { initialsOf } from "@/lib/people";
+import { Watermark } from "@/components/brand/Brand";
 
 export const revalidate = 30;
 
@@ -10,8 +11,9 @@ export default async function TeamsPage({ searchParams }: { searchParams: Promis
   const [games, categories, teams, players] = await Promise.all([data.getGames(), data.getCategories(), data.getTeams(), data.getPlayers()]);
   const shownGames = games.filter((g) => !q.game || g.code === q.game);
   return (
-    <div className="space-y-6">
-      <h1 className="text-xl font-bold">ทีม</h1>
+    <div className="relative space-y-6 overflow-hidden">
+      <Watermark height={520} opacity={0.04} />
+      <h1 className="relative text-xl font-bold">ทีม</h1>
       <div className="flex flex-wrap gap-2 text-sm">
         <Link href="/teams" className={`rounded px-3 py-1 ${!q.game ? "bg-accent text-black" : "bg-surface"}`}>ทุกเกม</Link>
         {games.map((g) => <Link key={g.id} href={`/teams?game=${g.code}`} className={`rounded px-3 py-1 ${q.game === g.code ? "bg-accent text-black" : "bg-surface"}`}>{g.name}</Link>)}

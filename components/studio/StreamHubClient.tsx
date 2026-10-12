@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Keyboard, Zap } from "lucide-react";
 import type { Category, Game, Match, Scene, Team } from "@/lib/types";
-import { EVENTS, matchChannelName, openBus, type Bus, type HudTone } from "@/lib/realtime";
+import { EVENTS, matchChannelName, openBus, type BugCorner, type Bus, type HudTone } from "@/lib/realtime";
 import { DEFAULT_HOTKEYS, HOTKEY_ACTIONS, SCENE_ACTIONS, comboFromEvent, useStreamHubHotkeys } from "./hotkeys";
 import { HotkeySettingsModal } from "./HotkeySettingsModal";
 import { NetworkStat } from "./NetworkStat";
@@ -14,6 +14,13 @@ const QUICK_HUD: { text: string; tone: HudTone }[] = [
   { text: "ปัญหาทางเทคนิค", tone: "alert" },
 ];
 const HEARTBEAT_MS = 5000;
+const BUG_CORNERS: { v: BugCorner; label: string }[] = [
+  { v: "tl", label: "ซ้ายบน" },
+  { v: "tr", label: "ขวาบน" },
+  { v: "bl", label: "ซ้ายล่าง" },
+  { v: "br", label: "ขวาล่าง" },
+  { v: "hidden", label: "ซ่อน" },
+];
 
 export function StreamHubClient({
   channelKey,
@@ -40,6 +47,7 @@ export function StreamHubClient({
   const [withStinger, setWithStinger] = useState(true);
   const [score, setScore] = useState({ a_series: 0, b_series: 0, games: [] as { a: number; b: number }[] });
   const [hudText, setHudText] = useState("");
+  const [bug, setBug] = useState<BugCorner>("bl");
   const [showKeys, setShowKeys] = useState(false);
   const { hotkeys, save } = useStreamHubHotkeys(DEFAULT_HOTKEYS);
   const busRef = useRef<Bus | null>(null);
@@ -62,9 +70,15 @@ export function StreamHubClient({
     const t = setInterval(() => {
       busRef.current?.send(EVENTS.sceneChange, { scene });
       busRef.current?.send(EVENTS.scoreUpdate, score);
+      busRef.current?.send(EVENTS.brandBug, { corner: bug });
     }, HEARTBEAT_MS);
     return () => clearInterval(t);
-  }, [scene, score]);
+  }, [scene, score, bug]);
+
+  const setBugCorner = (corner: BugCorner) => {
+    setBug(corner);
+    busRef.current?.send(EVENTS.brandBug, { corner });
+  };
 
   const gotoScene = useCallback(
     (next: Scene) => {
@@ -208,6 +222,15 @@ export function StreamHubClient({
         <button className={`${btn} flex w-full items-center justify-center gap-2`} onClick={playStinger}>
           <Zap className="h-4 w-4" /> สติงเกอร์ <span className="text-[10px] text-muted">{hotkeys.stinger}</span>
         </button>
+
+        <div className="space-y-1 rounded bg-surface/60 p-2">
+          <div className="text-xs text-accent-2">ตรามุมจอ (ฉาก LIVE) — หลบ UI ของเกม</div>
+          <div className="flex flex-wrap gap-1">
+            {BUG_CORNERS.map((c) => (
+              <button key={c.v} className={`${btn} ${bug === c.v ? "ring-2 ring-accent" : ""}`} onClick={() => setBugCorner(c.v)}>{c.label}</button>
+            ))}
+          </div>
+        </div>
 
         <div className="space-y-1 rounded bg-surface/60 p-2">
           <div className="text-xs text-accent-2">สกอร์ซีรีส์ (BO{match?.best_of})</div>

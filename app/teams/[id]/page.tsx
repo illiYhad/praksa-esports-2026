@@ -3,6 +3,7 @@ import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
 import { AthleteCard } from "@/components/profile/AthleteCard";
 import { BracketView } from "@/components/bracket/BracketView";
+import { KrasaMark, Seal } from "@/components/brand/Brand";
 import { DEFAULT_SETTING } from "@/lib/bracket/generate";
 import { initialsOf, publicPhoto } from "@/lib/people";
 import { MEDAL_ICON, MEDAL_LABEL, medalsForTeam, teamHistory, teamRecord } from "@/lib/stats";
@@ -38,7 +39,9 @@ export default async function TeamPage({ params }: { params: Promise<{ id: strin
   return (
     <div className="space-y-6">
       <Link href="/teams" className="text-xs text-muted">← ทีมทั้งหมด</Link>
-      <section className="flex flex-col gap-4 sm:flex-row sm:items-center">
+      <section className="relative flex flex-col gap-4 overflow-hidden rounded-xl bg-surface/40 p-4 sm:flex-row sm:items-center">
+        <div className="pointer-events-none absolute inset-y-0 right-0 flex items-center opacity-[.08]" aria-hidden><KrasaMark variant="white" size={260} /></div>
+        <div className="absolute right-3 top-3"><Seal size={40} /></div>
         {team.logo_url ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img src={team.logo_url} alt="" className="h-24 w-24 rounded-xl object-contain" />
