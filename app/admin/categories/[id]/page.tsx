@@ -35,6 +35,10 @@ export default async function CategorySetupPage({ params }: { params: Promise<{ 
         <Link href="/admin/categories" className="text-xs text-muted">← ประเภททั้งหมด</Link>
         <h1 className="text-xl font-bold">{category.name}</h1>
         <p className="text-sm text-muted">{game.name} · {catTeams.length} ทีม/คน · {catMatches.length} แมตช์</p>
+        <div className="mt-1 flex gap-2 text-xs">
+          <a href={`/print/bracket/${category.id}`} target="_blank" rel="noreferrer" className="rounded bg-surface px-2 py-1 hover:text-accent">🖨 สายแข่ง (A4 แนวนอน)</a>
+          <a href={`/print/results/${category.id}`} target="_blank" rel="noreferrer" className="rounded bg-surface px-2 py-1 hover:text-accent">🖨 สรุปผลและเหรียญ</a>
+        </div>
       </div>
 
       <CategorySetupClient category={category} teams={catTeams} setting={setting} matches={catMatches} siblings={siblings} />

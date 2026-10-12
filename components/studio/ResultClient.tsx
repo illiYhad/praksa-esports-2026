@@ -124,8 +124,9 @@ function MatchForm({ match, game, teams }: { match: Match; game: Game; teams: Te
 
   return (
     <div className="mt-1 w-full min-w-0 space-y-3 rounded bg-surface/60 p-3">
-      <div className="text-sm">
-        <b>{a}</b> vs <b>{b}</b> · BO{match.best_of}
+      <div className="flex flex-wrap items-center gap-2 text-sm">
+        <span><b>{a}</b> vs <b>{b}</b> · BO{match.best_of}</span>
+        <a href={`/print/result-sheet/${match.id}`} target="_blank" rel="noreferrer" className="ml-auto rounded bg-surface px-2 py-1 text-xs hover:text-accent">🖨 ใบบันทึกผล</a>
       </div>
 
       <div className="space-y-2">

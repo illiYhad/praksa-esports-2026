@@ -48,6 +48,9 @@ export function ScheduleClient({ games, categories, stations, matches, teams }: 
       <section className="space-y-2 rounded bg-surface/60 p-3">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-bold text-accent-2">สถานี</h2>
+          <div className="flex gap-1 text-xs">
+            {[1, 2, 3, 4].map((d) => <a key={d} href={`/print/schedule/${d}`} target="_blank" rel="noreferrer" className={btn}>🖨 วันที่ {d}</a>)}
+          </div>
           <button className={`${btn} text-accent`} disabled={busy} onClick={() => act(() => autoQueueAction(gameId), (n) => `จัดคิวอัตโนมัติแล้ว ${n ?? 0} แมตช์`)}>
             ⚡ จัดคิวอัตโนมัติ (แมตช์ที่พร้อมเล่น → สถานีว่าง)
           </button>
@@ -101,6 +104,7 @@ function Row({ m, stations, nm, catName }: { m: Match; stations: Station[]; nm: 
         <button className={btn} disabled={busy} onClick={() => act(() => updateScheduleAction(m.id, { station_id: station || null, scheduled_time: fromLocalInput(time), ...(started ? {} : { best_of: bo }) }), "บันทึกแล้ว")}>
           บันทึก
         </button>
+        <a href={`/print/result-sheet/${m.id}`} target="_blank" rel="noreferrer" className={btn}>🖨 ใบบันทึกผล</a>
       </div>
       <MsgLine msg={msg} />
     </li>

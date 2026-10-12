@@ -44,6 +44,17 @@ export function shortCategoryName(name: string, gameName: string): string {
   return s.replace(/\s+/g, " ").trim() || name;
 }
 
+/** เวลา HH:mm ตามเวลาไทย */
+export const clockOf = (iso?: string) =>
+  iso ? new Date(iso).toLocaleTimeString("th-TH", { timeZone: "Asia/Bangkok", hour: "2-digit", minute: "2-digit" }) : "-";
+
+/** วันที่ YYYY-MM-DD ตามเวลาไทย (ใช้จับคู่กับวันแข่ง) */
+export const dayKeyOf = (iso?: string) => (iso ? new Date(iso).toLocaleDateString("sv-SE", { timeZone: "Asia/Bangkok" }) : "");
+
+/** วันที่ภาษาไทยแบบยาว เช่น วันอาทิตย์ที่ 18 ตุลาคม 2569 */
+export const thaiDate = (ymd: string) =>
+  ymd ? new Date(`${ymd}T00:00:00+07:00`).toLocaleDateString("th-TH", { timeZone: "Asia/Bangkok", weekday: "long", day: "numeric", month: "long", year: "numeric" }) : "-";
+
 /** ISO → ค่าช่อง datetime-local ตามเวลาไทย (YYYY-MM-DDTHH:mm) */
 export function toLocalInput(iso?: string): string {
   if (!iso) return "";
