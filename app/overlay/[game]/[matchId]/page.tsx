@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
 import { OverlayStage } from "@/components/studio/OverlayStage";
+import { LiveRefresh } from "@/components/studio/LiveRefresh";
 import { shortCategoryName } from "@/lib/view";
 
 export const dynamic = "force-dynamic";
@@ -37,6 +38,8 @@ export default async function OverlayPage({
   return (
     <>
       <style>{CLEAR_STYLE}</style>
+      {/* ดึงสถานะแมตช์ใหม่เมื่อข้อมูลเปลี่ยน → บันทึกผลแล้ว overlay ที่เปิดค้างจะใช้ผลที่บันทึก */}
+      <LiveRefresh />
       <OverlayStage
         channelKey={expected}
         game={g}
