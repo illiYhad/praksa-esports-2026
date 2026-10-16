@@ -1,11 +1,12 @@
 import { notFound } from "next/navigation";
 import { data } from "@/lib/data";
 import { OverlayStage } from "@/components/studio/OverlayStage";
+import { LiveRefresh } from "@/components/studio/LiveRefresh";
 import { shortCategoryName } from "@/lib/view";
 
 export const dynamic = "force-dynamic";
 
-const CLEAR_STYLE = "html,body{background:transparent!important;overflow:hidden}header{display:none}main{padding:0;max-width:none;margin:0}";
+const CLEAR_STYLE = "html,body{background:transparent!important;overflow:hidden}header,footer{display:none}main{padding:0;max-width:none;margin:0}";
 
 export default async function OverlayPage({
   params,
@@ -37,6 +38,8 @@ export default async function OverlayPage({
   return (
     <>
       <style>{CLEAR_STYLE}</style>
+      {/* ดึงสถานะแมตช์ใหม่เมื่อข้อมูลเปลี่ยน → บันทึกผลแล้ว overlay ที่เปิดค้างจะใช้ผลที่บันทึก */}
+      <LiveRefresh />
       <OverlayStage
         channelKey={expected}
         game={g}

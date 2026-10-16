@@ -43,7 +43,10 @@ type Props = {
 
 export function OverlayStage({ channelKey, game, match, categoryName, matches, teams, players, sponsors, photos, showRoster, stingerVideo }: Props) {
   const [scene, setScene] = useState<Scene>(match.status === "ongoing" ? "LIVE" : "STARTING");
-  const [score, setScore] = useState({ a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores });
+  const [liveScore, setScore] = useState({ a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores });
+  // แมตช์จบแล้ว (ended/certified) → ผลที่บันทึกคือความจริง ไม่สนสกอร์จากห้องคุม (K-S5a)
+  const final = match.status === "ended" || match.status === "certified";
+  const score = final ? { a_series: match.team_a_score, b_series: match.team_b_score, games: match.game_scores } : liveScore;
   const [hud, setHud] = useState<{ text: string; tone: HudTone } | null>(null);
   const [bug, setBug] = useState<BugCorner>("bl");
   const [barPos, setBarPos] = useState<ScoreBarPosition>(defaultBarPosition(game.code));
