@@ -5,7 +5,7 @@ import { shortCategoryName } from "@/lib/view";
 
 export const dynamic = "force-dynamic";
 
-const CLEAR_STYLE = "html,body{background:transparent!important;overflow:hidden}header{display:none}main{padding:0;max-width:none;margin:0}";
+const CLEAR_STYLE = "html,body{background:transparent!important;overflow:hidden}header,footer{display:none}main{padding:0;max-width:none;margin:0}";
 
 export default async function OverlayPage({
   params,
